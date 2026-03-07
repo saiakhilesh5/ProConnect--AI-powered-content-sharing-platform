@@ -137,8 +137,7 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
   // Derive current tab from pathname
   useEffect(() => {
     if (!pathname) return;
-    if (pathname.startsWith("/dashboard")) setCurrentTab("dashboard");
-    else if (pathname.startsWith("/feed")) setCurrentTab("discover");
+    if (pathname.startsWith("/feed")) setCurrentTab("discover");
     else if (pathname.startsWith("/search")) setCurrentTab("search");
     else if (pathname.startsWith("/users")) setCurrentTab("users");
     else if (pathname.startsWith("/collections")) setCurrentTab("collections");
@@ -155,16 +154,16 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
   // Recent & trending helpers
   const loadRecentSearches = () => {
     try {
-      const recent = JSON.parse(localStorage.getItem("pixora_recent_searches") || "[]");
+      const recent = JSON.parse(localStorage.getItem("proconnect_recent_searches") || "[]");
       setRecentSearches(recent.slice(0, 8));
     } catch {}
   };
 
   const saveSearch = (term) => {
     try {
-      const recent = JSON.parse(localStorage.getItem("pixora_recent_searches") || "[]");
+      const recent = JSON.parse(localStorage.getItem("proconnect_recent_searches") || "[]");
       const filtered = recent.filter((t) => t !== term);
-      localStorage.setItem("pixora_recent_searches", JSON.stringify([term, ...filtered].slice(0, 12)));
+      localStorage.setItem("proconnect_recent_searches", JSON.stringify([term, ...filtered].slice(0, 12)));
     } catch {}
   };
 
@@ -195,17 +194,17 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
 
   return (
     <motion.header
-      className={`fixed top-0 right-0 left-0 z-40 transition-all duration-300 border-b ${
+      className={`fixed top-0 right-0 left-0 z-40 transition-all duration-200 border-b ${
         scrolled
-          ? "glass border-border/50 py-2.5"
+          ? "bg-card border-border py-2.5"
           : "bg-transparent py-4 border-transparent"
       } ${
         // Mobile: no left margin, Desktop: left margin for sidebar
         "ml-0 lg:ml-20 xl:ml-64"
       }`}
-      initial={{ y: -100, opacity: 0 }}
+      initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
     >
       <div className="px-4 lg:px-6 mx-auto">
         <div className="flex items-center justify-between">
@@ -217,11 +216,11 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <Link href={"/dashboard"} className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-primary to-accent rounded-lg p-1.5 flex items-center justify-center shadow-glow">
+            <Link href={"/feed"} className="flex items-center gap-2">
+              <div className="bg-primary rounded-lg p-1.5 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <h1 className="text-lg font-bold gradient-text">ProConnect</h1>
+              <h1 className="text-lg font-bold text-foreground">ProConnect</h1>
             </Link>
           </div>
 
@@ -240,7 +239,7 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
             <div className="w-full max-w-xl">
               <button
                 onClick={toggleSearch}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl glass-subtle border border-border hover:border-border-hover text-muted-foreground hover:text-foreground transition-all cursor-pointer group"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-secondary/50 border border-border hover:border-border-hover text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
               >
                 <Search className="w-4 h-4 group-hover:text-primary transition-colors" />
                 <span className="text-sm">Search images, people, collections...</span>
@@ -299,14 +298,14 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
             onClick={() => setSearchOpen(false)}
           >
             <motion.div
-              initial={{ opacity: 0, y: -50, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -50, scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.15 }}
               className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[calc(100%-1rem)] max-w-2xl mx-auto z-[130] sm:top-20 sm:w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="glass-card rounded-2xl shadow-2xl overflow-hidden border border-border">
+              <div className="bg-card rounded-2xl shadow-lg overflow-hidden border border-border">
                 <form onSubmit={onSubmitSearch} className="flex items-center p-3 sm:p-4 border-b border-border">
                   <Search className="w-5 h-5 text-muted-foreground mr-3 flex-shrink-0" />
                   <input
@@ -322,7 +321,7 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
 
                 <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {/* Recent Searches */}
-                  <div className="glass-subtle rounded-xl p-2.5 sm:p-3 border border-border">
+                  <div className="bg-secondary/30 rounded-xl p-2.5 sm:p-3 border border-border">
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="w-4 h-4 text-primary" />
                       <h4 className="text-sm font-semibold text-primary">Recent</h4>
@@ -345,7 +344,7 @@ const LoggedInHeader = ({ mobileSidebarOpen, setMobileSidebarOpen }) => {
                   </div>
 
                   {/* Trending Tags (chips like search page) */}
-                  <div className="glass-subtle rounded-xl p-2.5 sm:p-3 border border-border">
+                  <div className="bg-secondary/30 rounded-xl p-2.5 sm:p-3 border border-border">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingUp className="w-4 h-4 text-accent" />
                       <h4 className="text-sm font-semibold text-accent">Trending searches</h4>

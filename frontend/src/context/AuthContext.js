@@ -17,27 +17,54 @@ export const AuthProvider = ({ children }) => {
   const [lastVerified, setLastVerified] = useState(null);
   const router = useRouter();
 
-  // Load cached user data on mount
+  // Load cached user data on mount - but only if it matches current session
   useEffect(() => {
+    // Don't load cache if we're not authenticated or session is loading
+    if (status === 'loading') return;
+    
+    // If not authenticated, clear any cached data
+    if (status === 'unauthenticated') {
+      try {
+        sessionStorage.removeItem('cachedUser');
+        sessionStorage.removeItem('cachedUserTimestamp');
+        sessionStorage.removeItem('cachedUserId');
+      } catch (e) {}
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    
     try {
       const cachedUser = sessionStorage.getItem('cachedUser');
       const cachedTimestamp = sessionStorage.getItem('cachedUserTimestamp');
+      const cachedUserId = sessionStorage.getItem('cachedUserId');
       
-      if (cachedUser && cachedTimestamp) {
+      // Check if cached user matches current session user
+      const sessionUserId = session?.user?.id;
+      
+      if (cachedUser && cachedTimestamp && cachedUserId) {
         const timestamp = parseInt(cachedTimestamp);
         const now = Date.now();
         
-        // Use cached data if it's less than 5 minutes old
-        if (now - timestamp < 300000) {
+        // Use cached data ONLY if:
+        // 1. It's less than 5 minutes old
+        // 2. The cached user ID matches the session user ID
+        if (now - timestamp < 300000 && (!sessionUserId || cachedUserId === sessionUserId)) {
           setUser(JSON.parse(cachedUser));
           setLastVerified(timestamp);
-          setLoading(false); // Set loading to false since we have cached data
+          setLoading(false);
+          return;
         }
       }
+      
+      // Cache is invalid or doesn't match - clear it
+      sessionStorage.removeItem('cachedUser');
+      sessionStorage.removeItem('cachedUserTimestamp');
+      sessionStorage.removeItem('cachedUserId');
     } catch (error) {
       console.error('Error loading cached user data:', error);
     }
-  }, []);
+  }, [status, session?.user?.id]);
 
   // Use the custom hook to get the API client
   const api = useApi();
@@ -54,6 +81,7 @@ export const AuthProvider = ({ children }) => {
       try {
         sessionStorage.removeItem('cachedUser');
         sessionStorage.removeItem('cachedUserTimestamp');
+        sessionStorage.removeItem('cachedUserId');
         if (typeof window !== 'undefined') {
           window.localStorage.removeItem('auth_token');
           // Clear any other auth-related items
@@ -111,10 +139,11 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setLastVerified(now);
       
-      // Cache user data in sessionStorage
+      // Cache user data in sessionStorage with user ID for validation
       try {
         sessionStorage.setItem('cachedUser', JSON.stringify(userData));
         sessionStorage.setItem('cachedUserTimestamp', now.toString());
+        sessionStorage.setItem('cachedUserId', userData._id || userData.id);
       } catch (cacheError) {
         console.error('Error caching user data:', cacheError);
       }
@@ -223,6 +252,21 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Clear any cached user data from previous session BEFORE login
+      try {
+        sessionStorage.removeItem('cachedUser');
+        sessionStorage.removeItem('cachedUserTimestamp');
+        sessionStorage.removeItem('cachedUserId');
+        // Also clear localStorage token to prevent stale tokens
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('auth_token');
+        }
+        setUser(null);
+        setLastVerified(null);
+      } catch (e) {
+        console.error('Error clearing cache before login:', e);
+      }
 
       console.log("🔐 Starting login process...");
 
@@ -262,6 +306,22 @@ export const AuthProvider = ({ children }) => {
   const googleLogin = async () => {
     try {
       setLoading(true);
+      
+      // Clear any cached user data from previous session BEFORE login
+      try {
+        sessionStorage.removeItem('cachedUser');
+        sessionStorage.removeItem('cachedUserTimestamp');
+        sessionStorage.removeItem('cachedUserId');
+        // Also clear localStorage token to prevent stale tokens
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('auth_token');
+        }
+        setUser(null);
+        setLastVerified(null);
+      } catch (e) {
+        console.error('Error clearing cache before Google login:', e);
+      }
+      
       await signIn("google");
     } catch (err) {
       setError(err);

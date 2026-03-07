@@ -36,7 +36,7 @@ const HeroSection = () => {
       id: 1,
       title: "Share your story",
       description:
-        "Upload, organize, and showcase your best shots on Pixora — an image sharing platform built for creators and communities",
+        "Upload, organize, and showcase your best shots on ProConnect — a professional networking platform built for creators and communities",
       image: "/images/bg-img1.jpg",
       color: "from-emerald-500 to-teal-700",
       icon: <Sparkles className="w-6 h-6 text-emerald-300" />,

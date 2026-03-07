@@ -110,6 +110,20 @@ export const ReelsProvider = ({ children }) => {
     }
   };
 
+  // AI analyze reel to get suggested caption, hashtags, category
+  const analyzeReelWithAI = async (videoUrl, thumbnailUrl) => {
+    try {
+      const response = await api.post("/api/reels/analyze", {
+        videoUrl,
+        thumbnailUrl,
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error("Error analyzing reel with AI:", error);
+      throw error;
+    }
+  };
+
   // Toggle like reel
   const toggleLikeReel = async (reelId) => {
     try {
@@ -188,6 +202,51 @@ export const ReelsProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching comments:", error);
       throw error;
+    }
+  };
+
+  // Toggle like comment
+  const toggleLikeComment = async (commentId) => {
+    try {
+      const response = await api.post(`/api/reels/comments/${commentId}/like`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      throw error;
+    }
+  };
+
+  // Get comment replies
+  const getCommentReplies = async (commentId, page = 1) => {
+    try {
+      const response = await api.get(
+        `/api/reels/comments/${commentId}/replies?page=${page}&limit=10`
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching replies:", error);
+      throw error;
+    }
+  };
+
+  // Delete comment
+  const deleteComment = async (commentId) => {
+    try {
+      await api.delete(`/api/reels/comments/${commentId}`);
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      throw error;
+    }
+  };
+
+  // Search users for @mention
+  const searchUsersForMention = async (query) => {
+    try {
+      const response = await api.get(`/api/reels/mentions/search?query=${encodeURIComponent(query)}`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error searching users for mention:", error);
+      return [];
     }
   };
 
@@ -292,10 +351,15 @@ export const ReelsProvider = ({ children }) => {
         loadMoreReels,
         getReel,
         uploadReel,
+        analyzeReelWithAI,
         toggleLikeReel,
         toggleSaveReel,
         addComment,
         getComments,
+        toggleLikeComment,
+        getCommentReplies,
+        deleteComment,
+        searchUsersForMention,
         deleteReel,
         getTrendingReels,
         searchReels,

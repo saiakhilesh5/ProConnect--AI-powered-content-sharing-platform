@@ -1,17 +1,11 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import {
-  Filter,
-  ChevronDown,
-} from 'lucide-react';
-import ImageCard from '@/components/cards/ImageCard';
-import { CategoryFilter } from '@/app/(protected)/dashboard/components';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Heart, MessageCircle, Film, Images, Camera } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
-import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 
 const WorksTab = ({user}) => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [loadedImages, setLoadedImages] = useState([]);
   const [userImages, setUserImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,12 +24,7 @@ const WorksTab = ({user}) => {
     }
 
     try {
-      // Add category to the API request if it's not 'all'
-      const endpoint = selectedCategory && selectedCategory !== 'all'
-        ? `/api/images/user/${user._id}?page=${pageNum}&limit=9&category=${selectedCategory}`
-        : `/api/images/user/${user._id}?page=${pageNum}&limit=9`;
-        
-      const response = await api.get(endpoint);
+      const response = await api.get(`/api/images/user/${user._id}?page=${pageNum}&limit=12`);
       
       if (isLoadMore) {
         setUserImages(prevImages => [...prevImages, ...response.data.data]);
@@ -43,15 +32,9 @@ const WorksTab = ({user}) => {
         setUserImages(response.data.data);
       }
 
-      // Check if more images are available
       setHasMore(response.data.metadata.page < response.data.metadata.pages);
-
-      // After a short delay, mark images as loaded for animation
-      setTimeout(() => {
-        setLoadedImages(prev => [...prev, ...response.data.data.map(img => img._id)]);
-        setLoading(false);
-        setLoadingMore(false);
-      }, 300);
+      setLoading(false);
+      setLoadingMore(false);
     } catch (error) {
       console.error('Error fetching user images:', error);
       setLoading(false);
@@ -59,7 +42,6 @@ const WorksTab = ({user}) => {
     }
   };
 
-  // Load more images
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
       const nextPage = page + 1;
@@ -73,53 +55,89 @@ const WorksTab = ({user}) => {
       setPage(1);
       fetchUserImages(1, false);
     }
-  }, [user, selectedCategory]);
+  }, [user]);
 
   if(!user) return null;
 
-  return (
-    <div>
-      {/* Category filter */}
-      <div className="grid grid-cols-1 mb-3">
-        <CategoryFilter selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="grid grid-cols-3 gap-1">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <div key={index} className="aspect-square bg-secondary animate-pulse" />
+        ))}
       </div>
-      {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-4">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <ImageSkeleton key={`skeleton-${index}`} heightClass="aspect-[4/4]" />
-          ))}
-        </div>
-      ) : userImages.length === 0 ? (
-        <div className="flex justify-center items-center h-48 sm:h-64 bg-card border border-border rounded-xl mt-4">
-          <p className="text-sm sm:text-base text-gray-400 px-4 text-center">No images available for this category</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3 mt-4 sm:mt-6">
-          {userImages.map((image, index) => (
-            <ImageCard
-              key={image._id}
-              image={image}
-              heightClass="aspect-[4/4]"
-              isLoaded={loadedImages.includes(image._id)}
-              index={index % 3}
-              columnIndex={Math.floor(index / 3)}
-            />
-          ))}
-        </div>
-      )}
+    );
+  }
 
-      {hasMore && !loading && (
-        <div className="flex justify-center mt-6 sm:mt-8">
+  // Empty state
+  if (userImages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
+          <Camera className="w-10 h-10 text-foreground" strokeWidth={1} />
+        </div>
+        <h3 className="text-2xl md:text-3xl font-bold mb-2">Share Photos</h3>
+        <p className="text-muted-foreground text-sm max-w-xs">
+          When you share photos, they will appear on your profile.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Instagram-style 3-column grid */}
+      <div className="grid grid-cols-3 gap-1">
+        {userImages.map((image) => (
+          <Link 
+            key={image._id} 
+            href={`/image/${image._id}`}
+            className="relative aspect-square group bg-secondary overflow-hidden"
+          >
+            <Image
+              src={image.imageUrl}
+              alt={image.title || 'Post'}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 33vw, 311px"
+            />
+            
+            {/* Hover overlay with stats */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+              <div className="flex items-center gap-1.5 text-white font-semibold">
+                <Heart className="w-5 h-5 fill-white" />
+                <span>{image.likesCount || 0}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-white font-semibold">
+                <MessageCircle className="w-5 h-5 fill-white" />
+                <span>{image.commentsCount || 0}</span>
+              </div>
+            </div>
+
+            {/* Multi-image indicator */}
+            {image.images && image.images.length > 1 && (
+              <div className="absolute top-2 right-2">
+                <Images className="w-5 h-5 text-white drop-shadow-lg" />
+              </div>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="flex justify-center py-8">
           <button 
-            className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-xs sm:text-sm font-medium ${loadingMore ? 'opacity-70 cursor-wait' : ''}`}
+            className={`text-primary text-sm font-semibold hover:text-primary/80 transition-colors ${loadingMore ? 'opacity-50' : ''}`}
             onClick={handleLoadMore}
             disabled={loadingMore}
           >
-            {loadingMore ? 'Loading...' : 'Load More'}
+            {loadingMore ? 'Loading...' : 'Load more'}
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

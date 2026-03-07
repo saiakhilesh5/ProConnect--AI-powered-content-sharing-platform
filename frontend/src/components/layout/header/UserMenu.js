@@ -134,12 +134,12 @@ const UserMenu = ({ activeDropdown, toggleDropdown, setActiveDropdown, user, use
                 <span>View Profile</span>
               </Link>
               <Link
-                href="/dashboard"
+                href="/feed"
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-foreground"
                 onClick={() => setActiveDropdown(null)}
               >
                 <Grid className="w-5 h-5 text-muted-foreground" />
-                <span>Dashboard</span>
+                <span>Home</span>
               </Link>
               <Link
                 href="/settings"

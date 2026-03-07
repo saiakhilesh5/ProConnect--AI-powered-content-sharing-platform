@@ -43,7 +43,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push("/dashboard");
+      router.push("/feed");
     }
   }, [loading, isAuthenticated, router]);
   

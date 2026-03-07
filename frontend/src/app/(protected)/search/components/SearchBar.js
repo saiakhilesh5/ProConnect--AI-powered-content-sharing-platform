@@ -1,18 +1,16 @@
 "use client"
-import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, Loader } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, X, Loader } from 'lucide-react';
 
 const SearchBar = ({ 
   initialQuery, 
   onSearch, 
-  loading, 
-  showFilterMenu, 
-  setShowFilterMenu 
+  loading
 }) => {
-  // Internal state for input value
   const [inputValue, setInputValue] = useState(initialQuery || '');
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef(null);
   
-  // Update internal state if props change
   useEffect(() => {
     setInputValue(initialQuery || '');
   }, [initialQuery]);
@@ -21,56 +19,60 @@ const SearchBar = ({
     e.preventDefault();
     if (inputValue.trim()) {
       onSearch(inputValue);
+      inputRef.current?.blur();
     }
   };
 
-  const handleTrendingSearchClick = (query) => {
-    setInputValue(query);
-    onSearch(query);
+  const clearInput = () => {
+    setInputValue('');
+    inputRef.current?.focus();
   };
 
   return (
-    <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-lg border-b border-border px-6 py-4">
-      <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row items-center gap-4">
-        <form onSubmit={handleSearchSubmit} className="relative w-full">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input 
-            type="text" 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="bg-zinc-800/50 border border-white/10 rounded-full py-3 pl-12 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-white placeholder-gray-400"
-            placeholder="Search for images, users, tags, collections..."
-          />
-          {inputValue && (
+    <div className="sticky top-0 z-40 bg-background border-b border-border">
+      <div className="max-w-screen-xl mx-auto px-4 py-3">
+        <form onSubmit={handleSearchSubmit} className="relative">
+          <div className={`
+            flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-secondary border border-border transition-all duration-200
+            ${isFocused ? 'ring-1 ring-primary/50' : ''}
+          `}>
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <input 
+              ref={inputRef}
+              type="text" 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-sm"
+              style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+              placeholder="Search"
+            />
+            
+            {/* Clear button */}
+            {inputValue && (
+              <button 
+                type="button"
+                onClick={clearInput}
+                className="p-1 bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors flex-shrink-0"
+              >
+                <X className="w-3 h-3 text-background" />
+              </button>
+            )}
+            
+            {/* Search button */}
             <button 
-              onClick={() => setInputValue('')}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              type="button"
+              type="submit"
+              disabled={loading || !inputValue.trim()}
+              className="flex-shrink-0 px-4 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <X className="w-4 h-4" />
+              {loading ? <Loader className="w-4 h-4 animate-spin" /> : 'Search'}
             </button>
-          )}
+          </div>
         </form>
-        
-        <div className="flex items-center gap-2 md:ml-4">
-          <button 
-            className="bg-white/5 hover:bg-white/10 p-3 rounded-full relative"
-            onClick={() => setShowFilterMenu(!showFilterMenu)}
-          >
-            <Filter className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={handleSearchSubmit}
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 px-6 rounded-full transition-all duration-300 flex items-center gap-2"
-          >
-            {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Search
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
-export default SearchBar; 
+export default SearchBar;

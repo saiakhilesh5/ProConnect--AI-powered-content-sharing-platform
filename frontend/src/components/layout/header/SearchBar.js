@@ -30,7 +30,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
   // Load recent searches from localStorage
   const loadRecentSearches = () => {
     try {
-      const recent = JSON.parse(localStorage.getItem('pixora_recent_searches') || '[]');
+      const recent = JSON.parse(localStorage.getItem('proconnect_recent_searches') || '[]');
       setRecentSearches(recent.slice(0, 5));
     } catch (error) {
       console.error('Error loading recent searches:', error);
@@ -50,10 +50,10 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
   // Save search to recent searches
   const saveSearch = (query) => {
     try {
-      const recent = JSON.parse(localStorage.getItem('pixora_recent_searches') || '[]');
+      const recent = JSON.parse(localStorage.getItem('proconnect_recent_searches') || '[]');
       const filtered = recent.filter(item => item !== query);
       const updated = [query, ...filtered].slice(0, 10);
-      localStorage.setItem('pixora_recent_searches', JSON.stringify(updated));
+      localStorage.setItem('proconnect_recent_searches', JSON.stringify(updated));
     } catch (error) {
       console.error('Error saving search:', error);
     }
@@ -165,19 +165,20 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
           className="absolute left-0 right-0 mx-auto w-full max-w-4xl px-6 z-70"
         >
           <form onSubmit={handleSearchSubmit} className="relative">
-            <div className="relative flex items-center">
-              <Search className="absolute left-4 text-gray-400 w-5 h-5" />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-card backdrop-blur-xl border border-border shadow-xl shadow-black/30 focus-within:ring-2 focus-within:ring-violet-500">
+              <Search className="text-gray-400 w-4 h-4 flex-shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search images, people, collections, or tags..."
-                className="w-full bg-card backdrop-blur-xl border border-border rounded-full py-3 pl-12 pr-20 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xl shadow-black/30"
+                className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                 value={searchQuery}
                 onChange={handleSearchInput}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               />
-              <div className="absolute right-4 flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <button
                   type="button"
                   className="text-gray-400 hover:text-violet-400 transition-colors"

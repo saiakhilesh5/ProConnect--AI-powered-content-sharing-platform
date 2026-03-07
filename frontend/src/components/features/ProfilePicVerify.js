@@ -387,25 +387,24 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
                       Image URL
                     </label>
                     <div className="flex space-x-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          id="imageUrl"
-                          value={customImageUrl}
-                          onChange={(e) => setCustomImageUrl(e.target.value)}
-                          placeholder="https://example.com/image.jpg"
-                          className={`w-full p-3 pl-10 bg-gray-800 text-white border ${
-                            customImageError ? 'border-red-500' : customImageUrl && isCustomImageValid ? 'border-green-500' : 'border-gray-700'
-                          } rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <FiLink className="text-gray-400" />
+                      <div className="flex-1">
+                        <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border ${
+                          customImageError ? 'border-red-500' : customImageUrl && isCustomImageValid ? 'border-green-500' : 'border-gray-700'
+                        } bg-gray-800 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-colors`}>
+                          <FiLink className="text-gray-400 flex-shrink-0" />
+                          <input
+                            type="text"
+                            id="imageUrl"
+                            value={customImageUrl}
+                            onChange={(e) => setCustomImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            className="flex-1 bg-transparent text-white text-sm placeholder-gray-500"
+                            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                          />
+                          {customImageUrl && !customImageError && isCustomImageValid && (
+                            <IoCheckmarkCircle className="text-green-400 flex-shrink-0" size={20} />
+                          )}
                         </div>
-                        {customImageUrl && !customImageError && isCustomImageValid && (
-                          <div className="absolute inset-y-0 right-3 flex items-center">
-                            <IoCheckmarkCircle className="text-green-400" size={20} />
-                          </div>
-                        )}
                       </div>
                       <motion.button
                         onClick={handleCustomImageSubmit}

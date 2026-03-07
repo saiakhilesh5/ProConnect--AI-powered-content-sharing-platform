@@ -40,7 +40,13 @@ const commentSchema = new Schema(
     likes: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User' // Reference to users who liked the comment
-    }]
+    }],
+    moderationScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    }
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
@@ -48,7 +54,7 @@ const commentSchema = new Schema(
 );
 
 // Method to create a new comment
-commentSchema.statics.createComment = async function (userId, imageId, text, parentCommentId = null) {
+commentSchema.statics.createComment = async function (userId, imageId, text, parentCommentId = null, moderationScore = 0) {
   // Validate image exists
   const image = await mongoose.model('Image').findById(imageId);
   if (!image) {
@@ -76,6 +82,7 @@ commentSchema.statics.createComment = async function (userId, imageId, text, par
     image: imageId,
     text,
     parentComment: parentCommentId,
+    moderationScore,
   });
 
   // Increment the comment count on the image
@@ -121,8 +128,12 @@ commentSchema.statics.deleteComment = async function (commentId, userId) {
     await this.findByIdAndUpdate(comment.parentComment, { $inc: { repliesCount: -1 } });
   }
 
-  // Decrement the comment count on the image
-  await mongoose.model('Image').findByIdAndUpdate(comment.image, { $inc: { commentsCount: -1 } });
+  // Count how many comments will be deleted (comment + its replies)
+  const repliesCount = await this.countDocuments({ parentComment: commentId });
+  const totalToDelete = 1 + repliesCount; // 1 for the comment itself + number of replies
+
+  // Decrement the comment count on the image by total deleted
+  await mongoose.model('Image').findByIdAndUpdate(comment.image, { $inc: { commentsCount: -totalToDelete } });
 
   // Delete the comment and all its replies
   await this.deleteMany({ $or: [

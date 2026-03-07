@@ -5,7 +5,8 @@ import {
   unfollowUser,
   getFollowers,
   getFollowing,
-  checkFollowStatus
+  checkFollowStatus,
+  toggleFollow
 } from "../controllers/follow.controllers.js";
 
 const router = express.Router();
@@ -13,6 +14,9 @@ const router = express.Router();
 // Routes for follow/unfollow
 router.post("/:userId", authenticateUser, followUser);
 router.delete("/:userId", authenticateUser, unfollowUser);
+
+// Toggle follow/unfollow
+router.post("/toggle/:userId", authenticateUser, toggleFollow);
 
 // Routes for getting followers and following lists
 router.get("/followers/:userId", getFollowers);

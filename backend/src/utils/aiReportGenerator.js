@@ -237,7 +237,7 @@ const generateAIInsights = async (stats, period) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `You are an analytics expert for Pixora, an image sharing platform. Analyze the following platform statistics and generate a comprehensive report with actionable insights.
+    const prompt = `You are an analytics expert for ProConnect, a professional networking platform. Analyze the following platform statistics and generate a comprehensive report with actionable insights.
 
 PERIOD: ${period}
 

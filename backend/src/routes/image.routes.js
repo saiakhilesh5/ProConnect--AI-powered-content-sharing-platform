@@ -24,12 +24,28 @@ import {
   getImageLikers,
   analyzeImageWithAI,
   aiChat,
-  getCaptionSuggestions
+  getCaptionSuggestions,
+  checkImageCopyright,
+  semanticImageSearch,
+  findSimilar,
+  getImageSearchSuggestions,
+  getSmartFeedImages,
+  getForYouImages,
+  storyLike,
+  storyReply
 } from "../controllers/image.controllers.js";
 import { authenticateUser } from "../middlewares/auth.middleware.js";
 import upload from "../config/multer.js";
 
 const router = Router();
+
+// AI-powered routes (before generic routes)
+router.get("/smart-feed", authenticateUser, getSmartFeedImages);
+router.get("/for-you", authenticateUser, getForYouImages);
+router.get("/semantic-search", authenticateUser, semanticImageSearch);
+router.get("/search-suggestions", authenticateUser, getImageSearchSuggestions);
+router.post("/check-copyright", authenticateUser, checkImageCopyright);
+router.post("/find-similar", authenticateUser, findSimilar);
 
 // All routes now require authentication
 router.get("/public", authenticateUser, getAllImages);
@@ -52,6 +68,10 @@ router.delete("/:imageId/reviews", authenticateUser, deleteImageReview);
 
 // Report image
 router.post("/:imageId/report", authenticateUser, reportImage);
+
+// Story interactions
+router.post("/:imageId/story-like", authenticateUser, storyLike);
+router.post("/:imageId/story-reply", authenticateUser, storyReply);
 
 router.post("/upload", authenticateUser, upload.single("image"), uploadImageFile);
 router.post("/upload-temp", authenticateUser, upload.single("image"), uploadTempImage);

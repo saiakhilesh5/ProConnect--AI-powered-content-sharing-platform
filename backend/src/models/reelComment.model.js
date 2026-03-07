@@ -28,9 +28,23 @@ const reelCommentSchema = new Schema(
       type: Number,
       default: 0,
     },
+    likedBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }],
     repliesCount: {
       type: Number,
       default: 0,
+    },
+    mentions: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    moderationScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
     },
   },
   {

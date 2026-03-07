@@ -163,8 +163,80 @@ const getTrendingContext = async () => {
 };
 
 /**
- * Main chat function
+ * Search images in the platform by keyword for chat results
  */
+const searchImagesInPlatform = async (query, limit = 5) => {
+  try {
+    const keywords = query.split(/\s+/).filter(k => k.length > 2);
+    if (keywords.length === 0) return [];
+
+    const regex = new RegExp(keywords.join('|'), 'i');
+
+    const images = await Image.find({
+      visibility: 'public',
+      $or: [
+        { title: regex },
+        { description: regex },
+        { tags: { $in: keywords } },
+        { category: regex },
+      ]
+    })
+      .sort({ likesCount: -1 })
+      .limit(limit)
+      .populate('user', 'username fullName profilePicture')
+      .select('title imageUrl likesCount category tags user _id');
+
+    return images.map(img => ({
+      _id: img._id,
+      title: img.title,
+      imageUrl: img.imageUrl,
+      likesCount: img.likesCount || 0,
+      category: img.category,
+      author: {
+        username: img.user?.username,
+        fullName: img.user?.fullName,
+        profilePicture: img.user?.profilePicture || null,
+      }
+    }));
+  } catch (error) {
+    console.error('Image search error:', error);
+    return [];
+  }
+};
+
+/**
+ * Detect if message is asking to find/show images from the platform
+ */
+const detectImageSearchIntent = (message) => {
+  const lower = message.toLowerCase();
+  const intents = ['show', 'find', 'give', 'display', 'search', 'get', 'list', 'recommend', 'suggest', 'fetch', 'bring'];
+  const imageWords = ['image', 'images', 'photo', 'photos', 'picture', 'pictures', 'post', 'posts', 'content', 'related'];
+  const platformWords = ['website', 'platform', 'app', 'here', 'proconnect', 'in the', 'from the', 'on the'];
+
+  const hasIntent = intents.some(w => lower.includes(w));
+  const hasImageWord = imageWords.some(w => lower.includes(w));
+  const hasPlatformWord = platformWords.some(w => lower.includes(w));
+
+  // Also detect bare category queries like "nature images" or "landscape photos"
+  const bareQuery = /\b(nature|landscape|portrait|food|travel|architecture|animals|sports|abstract|fashion|street|wildlife|ocean|mountain|forest|city|flowers|sunset|beach)\s+(images?|photos?|pictures?|posts?)\b/i.test(lower);
+
+  return bareQuery || (hasIntent && (hasImageWord || hasPlatformWord));
+};
+
+/**
+ * Extract search topic from message
+ */
+const extractSearchTopic = (message) => {
+  return message
+    .toLowerCase()
+    .replace(/show me|give me|find me|search for|display|get me|list|recommend|suggest|fetch|bring me/g, '')
+    .replace(/related images?|related photos?|related pictures?|images?|photos?|pictures?|posts?|content/g, '')
+    .replace(/in the website|on the platform|on the app|from the website|in proconnect|here|from here/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+
 export const chatWithAssistant = async (userId, message, imageId = null) => {
   try {
     if (!process.env.GEMINI_API_KEY) {
@@ -174,13 +246,22 @@ export const chatWithAssistant = async (userId, message, imageId = null) => {
       };
     }
 
+    // Check if user is searching for images from the platform
+    let platformImages = [];
+    if (detectImageSearchIntent(message)) {
+      const topic = extractSearchTopic(message);
+      if (topic.length > 1) {
+        platformImages = await searchImagesInPlatform(topic, 5);
+      }
+    }
+
     // Gather context
     const userContext = await getUserContext(userId);
     const imageContext = imageId ? await getImageContext(imageId) : null;
     const trendingContext = await getTrendingContext();
 
     // Build system prompt with context
-    const systemPrompt = `You are Pixora AI Assistant, a helpful and friendly assistant for the Pixora image sharing platform. You help users with:
+    const systemPrompt = `You are ProConnect AI Assistant, a helpful and friendly assistant for the ProConnect professional networking platform. You help users with:
 - Understanding their image performance and engagement
 - Suggesting improvements for their content
 - Explaining why posts may or may not be trending
@@ -198,6 +279,8 @@ USER CONTEXT:
 ${userContext ? JSON.stringify(userContext, null, 2) : 'No user data available'}
 
 ${imageContext ? `CURRENT IMAGE CONTEXT:\n${JSON.stringify(imageContext, null, 2)}` : ''}
+
+${platformImages.length > 0 ? `SEARCH RESULTS: Found ${platformImages.length} matching images from the platform. Tell the user you found these images and they are shown below. Mention the top image title and its like count.` : ''}
 
 PLATFORM TRENDING DATA:
 ${trendingContext ? JSON.stringify(trendingContext, null, 2) : 'No trending data available'}
@@ -223,6 +306,7 @@ Current date: ${new Date().toLocaleDateString()}`;
     return {
       success: true,
       message: response,
+      images: platformImages.length > 0 ? platformImages : undefined,
       context: {
         hasUserData: !!userContext,
         hasImageData: !!imageContext,

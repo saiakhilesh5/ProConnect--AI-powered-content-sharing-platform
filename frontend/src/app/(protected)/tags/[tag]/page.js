@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/context/AuthContext';
-import { CategoryFilter } from '@/app/(protected)/dashboard/components';
+import CategoryFilter from '@/components/features/CategoryFilter';
 import ImageCard from '@/components/cards/ImageCard';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 

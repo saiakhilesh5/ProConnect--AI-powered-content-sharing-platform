@@ -6,7 +6,7 @@ import Link from "next/link";
 const NavTabs = ({ currentTab, setCurrentTab, isCreatingMode, toggleCreatorMode }) => {
   // Navigation tabs
   const navTabs = [
-    { id: "discover", label: "Discover", icon: Compass, href: "/dashboard" },
+    { id: "discover", label: "Discover", icon: Compass, href: "/feed" },
     { id: "trending", label: "Trending", icon: TrendingUp, href: "/tags" },
     { id: "new", label: "New", icon: Zap, href: "/upload-image" },
     { id: "collections", label: "Collections", icon: Layers, href: "/collections" },

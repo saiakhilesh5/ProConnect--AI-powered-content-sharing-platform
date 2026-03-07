@@ -6,11 +6,14 @@ import { UsersProvider } from "@/context/UsersContext";
 import { LikesFavoritesProvider } from "@/context/LikesFavoritesContext";
 import { MessagesProvider } from "@/context/MessagesContext";
 import { ReelsProvider } from "@/context/ReelsContext";
+import { SocketProvider } from "@/context/SocketContext";
+import { CallProvider } from "@/context/CallContext";
 import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import LoadingScreen from "@/components/screens/LoadingScreen";
 import NextTopLoader from "nextjs-toploader";
 import { DeveloperInfo } from "@/components";
+import { CallUI } from "@/components/features/calls/CallUI";
 
 export const metadata = {
   title: "ProConnect — Connect, Create, Collaborate",
@@ -20,27 +23,32 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <Suspense fallback={<LoadingScreen />}>
           <SessionWrapper>
             <AuthProvider>
-              <FollowProvider>
-                <UsersProvider>
-                  <LikesFavoritesProvider>
-                    <MessagesProvider>
-                      <ReelsProvider>
-                        <NextTopLoader
-                          color="#8b5cf6"
-                          showSpinner={false}
-                        />
-                        <Toaster position="top-center" />
-                        {children}
-                        <DeveloperInfo />
-                      </ReelsProvider>
-                    </MessagesProvider>
-                  </LikesFavoritesProvider>
-                </UsersProvider>
-              </FollowProvider>
+              <SocketProvider>
+                <CallProvider>
+                  <FollowProvider>
+                    <UsersProvider>
+                      <LikesFavoritesProvider>
+                        <MessagesProvider>
+                          <ReelsProvider>
+                            <NextTopLoader
+                              color="#8b5cf6"
+                              showSpinner={false}
+                            />
+                            <Toaster position="top-center" />
+                            {children}
+                            <CallUI />
+                            <DeveloperInfo />
+                          </ReelsProvider>
+                        </MessagesProvider>
+                      </LikesFavoritesProvider>
+                    </UsersProvider>
+                  </FollowProvider>
+                </CallProvider>
+              </SocketProvider>
             </AuthProvider>
           </SessionWrapper>
         </Suspense>

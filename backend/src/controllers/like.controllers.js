@@ -1,10 +1,12 @@
 import { Like } from "../models/like.model.js";
 import { Image } from "../models/image.model.js";
+import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { updateInteractionPoints, updateUserBadge } from "../utils/userUpdates.js";
+import { sendLikeEmail } from "../utils/emailService.js";
 
 /**
  * @desc Toggle image like status
@@ -39,6 +41,22 @@ export const toggleLike = asyncHandler(async (req, res) => {
         content: 'liked your image',
         relatedImage: imageId
       });
+
+      // Send like email (non-blocking)
+      const [imageOwner, liker] = await Promise.all([
+        User.findById(image.user).select('email fullName'),
+        User.findById(userId).select('fullName username'),
+      ]);
+      if (imageOwner?.email) {
+        sendLikeEmail({
+          recipientEmail: imageOwner.email,
+          recipientName: imageOwner.fullName,
+          senderName: liker?.fullName || 'Someone',
+          senderUsername: liker?.username || 'user',
+          imageTitle: image.title,
+          imageId: imageId.toString(),
+        }).catch(() => {});
+      }
     }
   }
 

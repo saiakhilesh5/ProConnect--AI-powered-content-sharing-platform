@@ -86,7 +86,7 @@ export default function LoginPage() {
 
       if (success) {
         toast.success("Login successful!");
-        router.push("/dashboard");
+        router.push("/feed");
       } else {
         setErrors({
           general: error || "Invalid credentials. Please try again.",
@@ -110,7 +110,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 transition-all duration-300 bg-background">
+    <div className="flex-1 w-full flex flex-col items-center justify-center px-4 py-8 transition-all duration-300 bg-background relative">
       {/* Floating background elements - using static values to prevent hydration mismatch */}
       <div className="absolute inset-0 overflow-hidden z-0">
         {[0, 1, 2, 3, 4, 5].map((i) => {
@@ -180,8 +180,8 @@ export default function LoginPage() {
               <label htmlFor="identifier" className="block text-sm font-medium text-foreground">
                 Email or Username
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <Mail size={18} />
                 </div>
                 <input
@@ -191,7 +191,8 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={formData.identifier}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary placeholder-muted-foreground"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="your.email@example.com or username"
                 />
               </div>
@@ -210,8 +211,8 @@ export default function LoginPage() {
               <label htmlFor="password" className="block text-sm font-medium text-foreground">
                 Password
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <Lock size={18} />
                 </div>
                 <input
@@ -221,12 +222,13 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary placeholder-muted-foreground"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
                   onClick={togglePasswordVisibility}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

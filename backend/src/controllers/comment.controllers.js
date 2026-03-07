@@ -7,6 +7,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { updateInteractionPoints } from "../utils/userUpdates.js";
 import { moderateComment, addUserWarning } from "../utils/contentModeration.js";
+import { generateReplySuggestions, getQuickReplyTemplates } from "../utils/aiAutoReplySuggestions.js";
+import { sendCommentEmail, sendReplyEmail } from "../utils/emailService.js";
 
 /**
  * @desc Create a new comment
@@ -31,11 +33,14 @@ export const createComment = asyncHandler(async (req, res) => {
   // Moderate the comment using AI
   const moderation = await moderateComment(text);
   
+  // Calculate toxicity level for display (0-100 scale)
+  const toxicityScore = Math.round((moderation.scores?.TOXICITY || 0) * 100);
+  
   if (!moderation.safe) {
     // Add warning to user
     const warningCount = await addUserWarning(User, userId, moderation.reason, 'comment');
     
-    // Return error with warning info
+    // Return error with toxicity info
     const warningMessage = warningCount >= 3 
       ? "Your account has been suspended due to multiple policy violations."
       : `Your comment was blocked due to ${moderation.reason}. Warning ${warningCount}/3.`;
@@ -43,11 +48,12 @@ export const createComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, warningMessage, {
       blocked: true,
       reason: moderation.reason,
-      warningCount
+      warningCount,
+      toxicityScore
     });
   }
 
-  const comment = await Comment.createComment(userId, imageId, text, parentCommentId);
+  const comment = await Comment.createComment(userId, imageId, text, parentCommentId, toxicityScore);
   
   // Update interaction points for commenting
   await updateInteractionPoints(userId, 'comment');
@@ -58,7 +64,7 @@ export const createComment = asyncHandler(async (req, res) => {
   if (image) {
     if (parentCommentId) {
       // This is a reply to another comment
-      const parentComment = await Comment.findById(parentCommentId).populate('user', 'username');
+      const parentComment = await Comment.findById(parentCommentId).populate('user', 'username email fullName');
       
       if (parentComment && parentComment.user._id.toString() !== userId.toString()) {
         // Send notification to parent comment owner about the reply
@@ -70,6 +76,18 @@ export const createComment = asyncHandler(async (req, res) => {
           relatedImage: imageId,
           relatedComment: parentCommentId
         });
+
+        // Send reply email (non-blocking)
+        if (parentComment.user.email) {
+          sendReplyEmail({
+            recipientEmail: parentComment.user.email,
+            recipientName: parentComment.user.fullName,
+            senderName: user.fullName,
+            senderUsername: user.username,
+            replyText: text,
+            imageId: imageId.toString(),
+          }).catch(() => {});
+        }
       }
     } else if (image.user.toString() !== userId.toString()) {
       // This is a new comment on the image
@@ -82,6 +100,20 @@ export const createComment = asyncHandler(async (req, res) => {
         relatedImage: imageId,
         relatedComment: comment._id
       });
+
+      // Send comment email (non-blocking)
+      const imageOwner = await User.findById(image.user).select('email fullName');
+      if (imageOwner?.email) {
+        sendCommentEmail({
+          recipientEmail: imageOwner.email,
+          recipientName: imageOwner.fullName,
+          senderName: user.fullName,
+          senderUsername: user.username,
+          commentText: text,
+          imageTitle: image.title,
+          imageId: imageId.toString(),
+        }).catch(() => {});
+      }
     }
   }
 
@@ -274,6 +306,76 @@ export const testModeration = asyncHandler(async (req, res) => {
       safe: moderation.safe,
       reason: moderation.reason,
       scores: moderation.scores
+    })
+  );
+});
+
+/**
+ * @desc Get AI-powered reply suggestions for a comment
+ * @route GET /api/comments/:commentId/suggestions
+ * @access Private (only image owner can get suggestions)
+ */
+export const getReplySuggestions = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user._id;
+
+  const suggestions = await generateReplySuggestions(commentId, userId.toString());
+
+  res.status(200).json(
+    new ApiResponse(200, "Reply suggestions generated successfully", suggestions)
+  );
+});
+
+/**
+ * @desc Get quick reply templates
+ * @route GET /api/comments/quick-replies
+ * @access Private
+ */
+export const getQuickReplies = asyncHandler(async (req, res) => {
+  const templates = getQuickReplyTemplates();
+
+  res.status(200).json(
+    new ApiResponse(200, "Quick reply templates fetched successfully", templates)
+  );
+});
+
+/**
+ * @desc Check comment text for toxicity (real-time)
+ * @route POST /api/comments/check-toxicity
+ * @access Private
+ */
+export const checkCommentToxicity = asyncHandler(async (req, res) => {
+  const { text } = req.body;
+  
+  if (!text || text.trim().length === 0) {
+    return res.status(200).json(
+      new ApiResponse(200, "No text to analyze", { 
+        toxicityScore: 0, 
+        safe: true,
+        level: 'safe'
+      })
+    );
+  }
+
+  const moderation = await moderateComment(text);
+  const toxicityScore = Math.round((moderation.scores?.TOXICITY || 0) * 100);
+  
+  // Determine level for UI display
+  let level = 'safe';
+  if (toxicityScore >= 70) {
+    level = 'high';
+  } else if (toxicityScore >= 40) {
+    level = 'medium';
+  } else if (toxicityScore >= 20) {
+    level = 'low';
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Toxicity check complete", {
+      toxicityScore,
+      safe: moderation.safe,
+      level,
+      reason: moderation.reason || null
     })
   );
 });

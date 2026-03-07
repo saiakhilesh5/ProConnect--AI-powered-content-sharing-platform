@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-foreground-secondary: rgb(var(--foreground-secondary));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-primary-hover: rgb(var(--primary-hover));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-secondary-hover: rgb(var(--secondary-hover));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-border: rgb(var(--border));
+  --color-border-hover: rgb(var(--border-hover));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    PROCONNECT - CREATIVE NETWORK PLATFORM
    Modern Design System with Theme Support
@@ -129,6 +162,13 @@
   outline-offset: 2px;
 }
 
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -229,23 +269,23 @@ body {
 }
 
 /* ----------------------------------------
-   SHADOW & GLOW EFFECTS
+   SHADOW & GLOW EFFECTS (Subtle & Clean)
    ---------------------------------------- */
 .shadow-glow {
-  box-shadow: 0 0 20px rgb(var(--glow-color) / var(--glow-opacity)),
-              0 0 40px rgb(var(--glow-color) / calc(var(--glow-opacity) * 0.5));
+  box-shadow: 0 0 12px rgb(var(--glow-color) / 0.1),
+              0 0 24px rgb(var(--glow-color) / 0.05);
 }
 
 .shadow-glow-sm {
-  box-shadow: 0 0 10px rgb(var(--glow-color) / var(--glow-opacity));
+  box-shadow: 0 0 8px rgb(var(--glow-color) / 0.08);
 }
 
 .shadow-soft {
-  box-shadow: 0 4px 20px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.04);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.06), 0 1px 4px rgb(0 0 0 / 0.03);
 }
 
 .dark .shadow-soft {
-  box-shadow: 0 4px 20px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.2);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.25), 0 1px 4px rgb(0 0 0 / 0.15);
 }
 
 /* ----------------------------------------
@@ -271,13 +311,17 @@ body {
   background: rgb(var(--card));
   border: 1px solid rgb(var(--border));
   border-radius: calc(var(--radius) + 0.25rem);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .card-interactive:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgb(var(--glow-color) / 0.15);
-  border-color: rgb(var(--primary) / 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
+  border-color: rgb(var(--border-hover));
+}
+
+.dark .card-interactive:hover {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
 }
 
 /* ----------------------------------------
@@ -400,15 +444,15 @@ body {
 }
 
 .glow-pulse {
-  animation: glowPulse 2s ease-in-out infinite;
+  animation: glowPulse 3s ease-in-out infinite;
 }
 
 @keyframes glowPulse {
   0%, 100% {
-    box-shadow: 0 0 5px rgb(var(--primary) / 0.3);
+    box-shadow: 0 0 4px rgb(var(--primary) / 0.15);
   }
   50% {
-    box-shadow: 0 0 20px rgb(var(--primary) / 0.6);
+    box-shadow: 0 0 8px rgb(var(--primary) / 0.25);
   }
 }
 
@@ -436,16 +480,16 @@ body {
    HOVER ANIMATIONS
    ---------------------------------------- */
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgb(0 0 0 / 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
 }
 
 .dark .hover-lift:hover {
-  box-shadow: 0 12px 24px rgb(0 0 0 / 0.4);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.3);
 }
 
 .hover-scale {
@@ -649,6 +693,45 @@ textarea::placeholder {
 
 @media (min-width: 641px) {
   .show-mobile-only { display: none !important; }
+}
+
+/* ----------------------------------------
+   STORY VIEWER
+   ---------------------------------------- */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Story progress bar smooth fill */
+.story-progress-fill {
+  will-change: width;
+}
+
+/* Story viewer overlay - prevent text selection */
+.story-viewer-no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Story reply input override - transparent bg in story viewer */
+.story-reply-input,
+.story-reply-input:focus {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+.story-reply-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* ----------------------------------------

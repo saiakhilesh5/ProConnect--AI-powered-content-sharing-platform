@@ -8,4 +8,5 @@ export { default as UsersTab } from './UsersTab';
 export { default as CollectionsTab } from './CollectionsTab';
 export { default as TagsTab } from './TagsTab';
 export { default as TrendingSearches } from './TrendingSearches';
-export { default as ActiveFilters } from './ActiveFilters'; 
+export { default as ActiveFilters } from './ActiveFilters';
+export { default as ExploreFeed } from './ExploreFeed'; 

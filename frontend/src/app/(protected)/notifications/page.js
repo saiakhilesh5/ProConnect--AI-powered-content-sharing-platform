@@ -24,7 +24,11 @@ import {
   Star,
   MoreHorizontal,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Mail,
+  Film,
+  Play,
+  Sparkles
 } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { toast } from 'react-hot-toast';
@@ -211,8 +215,18 @@ const NotificationsPage = () => {
         return <UserPlus className="w-5 h-5" fill="#8b5cf6" stroke="#8b5cf6" />;
       case 'favorite':
         return <Star className="w-5 h-5" fill="#f59e0b" stroke="#f59e0b" />;
+      case 'message':
+        return <Mail className="w-5 h-5" fill="#06b6d4" stroke="#06b6d4" />;
+      case 'reel_like':
+        return <Heart className="w-5 h-5" fill="#f43f5e" stroke="#f43f5e" />;
+      case 'reel_comment':
+        return <Film className="w-5 h-5" fill="#a855f7" stroke="#a855f7" />;
+      case 'story_like':
+        return <Sparkles className="w-5 h-5" fill="#fbbf24" stroke="#fbbf24" />;
+      case 'story_reply':
+        return <Play className="w-5 h-5" fill="#10b981" stroke="#10b981" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-400" />;
+        return <Bell className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -282,13 +296,39 @@ const NotificationsPage = () => {
 
       router.push(`/image/${imageId}?comment=${commentId}&isReply=true`);
     }
+    else if (['reel_like', 'reel_comment'].includes(notification.type) && notification.relatedReel) {
+      const reelId = notification.relatedReel._id || notification.relatedReel;
+      router.push(`/reels?reel=${reelId}`);
+    }
+    else if (notification.type === 'message' && notification.relatedConversation) {
+      const conversationId = notification.relatedConversation._id || notification.relatedConversation;
+      router.push(`/messages?conversation=${conversationId}`);
+    }
+    else if (['story_like', 'story_reply'].includes(notification.type)) {
+      const username = notification.sender?.username;
+      if (username) {
+        router.push(`/profile/${username}`);
+      }
+    }
   };
 
   // Filter notifications
   const filteredNotifications = notifications.filter(notification => {
-    const matchesFilter = activeFilter === 'all' ||
-      (activeFilter === 'unread' && !notification.read) ||
-      notification.type === activeFilter;
+    let matchesFilter = activeFilter === 'all' || (activeFilter === 'unread' && !notification.read);
+    
+    // Handle grouped filters
+    if (activeFilter === 'like') {
+      matchesFilter = ['like', 'reel_like', 'story_like'].includes(notification.type);
+    } else if (activeFilter === 'comment') {
+      matchesFilter = ['comment', 'reel_comment', 'reply', 'story_reply'].includes(notification.type);
+    } else if (activeFilter === 'story') {
+      matchesFilter = ['story_like', 'story_reply'].includes(notification.type);
+    } else if (activeFilter === 'reel') {
+      matchesFilter = ['reel_like', 'reel_comment'].includes(notification.type);
+    } else if (activeFilter !== 'all' && activeFilter !== 'unread') {
+      matchesFilter = notification.type === activeFilter;
+    }
+    
     const matchesSearch = searchQuery === '' ||
       notification.sender?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       notification.content?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -300,16 +340,19 @@ const NotificationsPage = () => {
   const filters = [
     { id: 'all', label: 'All', count: notifications.length },
     { id: 'unread', label: 'Unread', count: notifications.filter(n => !n.read).length },
-    { id: 'like', label: 'Likes', icon: <Heart className="w-4 h-4" />, count: notifications.filter(n => n.type === 'like').length },
-    { id: 'comment', label: 'Comments', icon: <MessageSquare className="w-4 h-4" />, count: notifications.filter(n => n.type === 'comment').length },
+    { id: 'like', label: 'Likes', icon: <Heart className="w-4 h-4" />, count: notifications.filter(n => n.type === 'like' || n.type === 'reel_like' || n.type === 'story_like').length },
+    { id: 'comment', label: 'Comments', icon: <MessageSquare className="w-4 h-4" />, count: notifications.filter(n => n.type === 'comment' || n.type === 'reel_comment' || n.type === 'reply').length },
     { id: 'follow', label: 'Follows', icon: <UserPlus className="w-4 h-4" />, count: notifications.filter(n => n.type === 'follow').length },
-    { id: 'favorite', label: 'Favorites', icon: <Star className="w-4 h-4" />, count: notifications.filter(n => n.type === 'favorite').length }
+    { id: 'favorite', label: 'Favorites', icon: <Star className="w-4 h-4" />, count: notifications.filter(n => n.type === 'favorite').length },
+    { id: 'message', label: 'Messages', icon: <Mail className="w-4 h-4" />, count: notifications.filter(n => n.type === 'message').length },
+    { id: 'story', label: 'Stories', icon: <Play className="w-4 h-4" />, count: notifications.filter(n => n.type === 'story_like' || n.type === 'story_reply').length },
+    { id: 'reel', label: 'Reels', icon: <Film className="w-4 h-4" />, count: notifications.filter(n => n.type === 'reel_like' || n.type === 'reel_comment').length }
   ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4 sm:p-6">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6">
       {/* Main container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -325,10 +368,10 @@ const NotificationsPage = () => {
                 <Bell className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
                   Notifications
                 </h1>
-                <p className="text-sm sm:text-base text-gray-400">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}
                 </p>
               </div>
@@ -340,7 +383,7 @@ const NotificationsPage = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 sm:p-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
+                className="p-2 sm:p-3 rounded-xl bg-secondary hover:bg-secondary-hover transition-colors text-foreground"
               >
                 <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${refreshing ? 'animate-spin' : ''}`} />
               </motion.button>
@@ -349,7 +392,7 @@ const NotificationsPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleSelectMode}
-                className={`p-2 sm:p-3 rounded-xl transition-colors ${isSelectMode ? 'bg-purple-600' : 'bg-gray-800 hover:bg-gray-700'
+                className={`p-2 sm:p-3 rounded-xl transition-colors ${isSelectMode ? 'bg-purple-600 text-white' : 'bg-secondary hover:bg-secondary-hover text-foreground'
                   }`}
               >
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -359,7 +402,7 @@ const NotificationsPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className="p-2 sm:p-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
+                className="p-2 sm:p-3 rounded-xl bg-secondary hover:bg-secondary-hover transition-colors text-foreground"
               >
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
@@ -368,14 +411,15 @@ const NotificationsPage = () => {
 
           {/* Search and Actions */}
           <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-secondary border border-border focus-within:ring-1 focus-within:ring-purple-600 focus-within:border-purple-600">
+              <Search className="text-muted-foreground w-5 h-5 flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Search notifications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm sm:text-base"
+                className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm sm:text-base"
+                style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
               />
             </div>
 
@@ -383,13 +427,13 @@ const NotificationsPage = () => {
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <button
                   onClick={selectAll}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-xs sm:text-sm"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-secondary hover:bg-secondary-hover transition-colors text-xs sm:text-sm text-foreground"
                 >
                   Select All
                 </button>
                 <button
                   onClick={deselectAll}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-xs sm:text-sm"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-secondary hover:bg-secondary-hover transition-colors text-xs sm:text-sm text-foreground"
                 >
                   Deselect All
                 </button>
@@ -397,13 +441,13 @@ const NotificationsPage = () => {
                   <>
                     <button
                       onClick={() => markAsRead(selectedNotifications)}
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs sm:text-sm"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs sm:text-sm text-white"
                     >
                       Mark Read
                     </button>
                     <button
                       onClick={() => deleteNotifications(selectedNotifications)}
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-xs sm:text-sm"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-xs sm:text-sm text-white"
                     >
                       Delete
                     </button>
@@ -416,7 +460,7 @@ const NotificationsPage = () => {
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={markAllAsRead}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition-colors text-xs sm:text-sm"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition-colors text-xs sm:text-sm text-white"
                 >
                   Mark All Read
                 </button>
@@ -432,13 +476,13 @@ const NotificationsPage = () => {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all text-xs sm:text-sm ${activeFilter === filter.id
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-secondary text-foreground hover:bg-secondary-hover'
                   }`}
               >
                 {filter.icon}
                 <span className="hidden sm:inline">{filter.label}</span>
                 <span className="sm:hidden">{filter.label.charAt(0)}</span>
-                <span className="text-xs bg-white/20 px-1.5 sm:px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-black/10 dark:bg-white/20 px-1.5 sm:px-2 py-0.5 rounded-full">
                   {filter.count}
                 </span>
               </button>
@@ -452,15 +496,15 @@ const NotificationsPage = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-gray-800/50 border border-gray-700"
+                className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-secondary border border-border"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">Sort By</label>
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-1 sm:mb-2">Sort By</label>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-xs sm:text-sm"
+                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-background border border-border text-foreground text-xs sm:text-sm"
                     >
                       <option value="latest">Latest First</option>
                       <option value="oldest">Oldest First</option>
@@ -469,14 +513,14 @@ const NotificationsPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">Show Read</label>
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-1 sm:mb-2">Show Read</label>
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <label className="flex items-center">
+                      <label className="flex items-center text-foreground">
                         <input
                           type="checkbox"
                           checked={showRead}
                           onChange={(e) => setShowRead(e.target.checked)}
-                          className="rounded border-gray-600 text-purple-600 focus:ring-purple-500"
+                          className="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500"
                         />
                         <span className="ml-2 text-xs sm:text-sm">Include read notifications</span>
                       </label>
@@ -484,17 +528,17 @@ const NotificationsPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">Quick Actions</label>
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-1 sm:mb-2">Quick Actions</label>
                     <div className="flex gap-1.5 sm:gap-2">
                       <button
                         onClick={() => deleteNotifications(notifications.filter(n => n.read).map(n => n._id))}
-                        className="px-2 sm:px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-xs"
+                        className="px-2 sm:px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-xs text-white"
                       >
                         Delete Read
                       </button>
                       <button
                         onClick={() => deleteNotifications(notifications.map(n => n._id))}
-                        className="px-2 sm:px-3 py-1 rounded-lg bg-red-700 hover:bg-red-600 transition-colors text-xs"
+                        className="px-2 sm:px-3 py-1 rounded-lg bg-red-700 hover:bg-red-600 transition-colors text-xs text-white"
                       >
                         Delete All
                       </button>
@@ -513,22 +557,22 @@ const NotificationsPage = () => {
               <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/20 mb-2">
                 {error}
               </div>
               <button
                 onClick={() => fetchNotifications(true)}
-                className="text-sm bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 px-4 py-2 rounded-lg transition-colors"
+                className="text-sm bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 px-4 py-2 rounded-lg transition-colors"
               >
                 Try again
               </button>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
-              <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-gray-600 mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-300 mb-2">No notifications</h3>
-              <p className="text-sm sm:text-base text-gray-500 px-4">
+              <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">No notifications</h3>
+              <p className="text-sm sm:text-base text-muted-foreground px-4">
                 {activeFilter === 'all'
                   ? "You're all caught up! Check back later for new notifications."
                   : `No ${activeFilter} notifications found.`}
@@ -543,9 +587,9 @@ const NotificationsPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: idx * 0.05 }}
                   className={`relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all cursor-pointer group border ${notification.read
-                      ? 'bg-gray-800/30 border-gray-700/50'
-                      : 'bg-purple-900/20 border-purple-500/30'
-                    } hover:bg-gray-800/50 hover:border-purple-500/50`}
+                      ? 'bg-muted border-border'
+                      : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-500/30'
+                    } hover:bg-secondary-hover hover:border-purple-300 dark:hover:border-purple-500/50`}
                   onClick={() => !isSelectMode && handleNotificationClick(notification)}
                 >
                   {/* Selection checkbox */}
@@ -554,7 +598,7 @@ const NotificationsPage = () => {
                       type="checkbox"
                       checked={selectedNotifications.includes(notification._id)}
                       onChange={() => toggleNotificationSelection(notification._id)}
-                      className="mt-1.5 sm:mt-2 rounded border-gray-600 text-purple-600 focus:ring-purple-500"
+                      className="mt-1.5 sm:mt-2 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500"
                       onClick={(e) => e.stopPropagation()}
                     />
                   )}
@@ -566,7 +610,7 @@ const NotificationsPage = () => {
 
                   {/* Avatar */}
                   <Link href={`/profile/${notification.sender?.username}`} className="block">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-700/30 to-gray-800 flex items-center justify-center ring-2 ring-purple-500/20 group-hover:ring-purple-500/40 transition-all flex-shrink-0 cursor-pointer hover:ring-violet-500/50">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-200 dark:from-purple-700/30 to-gray-100 dark:to-gray-800 flex items-center justify-center ring-2 ring-purple-300/20 dark:ring-purple-500/20 group-hover:ring-purple-400/40 dark:group-hover:ring-purple-500/40 transition-all flex-shrink-0 cursor-pointer hover:ring-violet-400/50 dark:hover:ring-violet-500/50">
                       {notification.sender?.profilePicture ? (
                         <img
                           src={notification.sender.profilePicture}
@@ -574,7 +618,7 @@ const NotificationsPage = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-gray-200 font-bold text-lg sm:text-xl">
+                        <span className="text-foreground font-bold text-lg sm:text-xl">
                           {notification.sender?.username?.charAt(0).toUpperCase() || "?"}
                         </span>
                       )}
@@ -587,21 +631,21 @@ const NotificationsPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm">
                           <Link href={`/profile/${notification.sender?.username}`} className="block">
-                            <span className="font-semibold text-white hover:text-violet-300 cursor-pointer transition-colors duration-200 hover:underline">{notification.sender?.username || 'Someone'}</span>
+                            <span className="font-semibold text-gray-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-300 cursor-pointer transition-colors duration-200 hover:underline">{notification.sender?.username || 'Someone'}</span>
                           </Link>
-                          <span className="text-gray-300"> {notification.content}</span>
+                          <span className="text-muted-foreground"> {notification.content}</span>
                         </p>
 
                         {/* Preview of related content if available */}
                         {notification.relatedImage && notification.relatedImage.title && (
-                          <div className="mt-1.5 sm:mt-2 p-1.5 sm:p-2 rounded-lg bg-gray-800/70 border border-gray-700/50 text-xs text-gray-300 truncate group-hover:bg-gray-800 transition-colors">
+                          <div className="mt-1.5 sm:mt-2 p-1.5 sm:p-2 rounded-lg bg-secondary border border-border text-xs text-muted-foreground truncate group-hover:bg-secondary-hover transition-colors">
                             &quot;{notification.relatedImage.title}&quot;
                           </div>
                         )}
 
                         <div className="flex items-center mt-1.5 sm:mt-2">
-                          <Clock className="w-3 h-3 text-purple-300/50 mr-1" />
-                          <p className="text-xs text-purple-300/70">{formatTime(notification.createdAt)}</p>
+                          <Clock className="w-3 h-3 text-purple-400/50 dark:text-purple-300/50 mr-1" />
+                          <p className="text-xs text-purple-500/70 dark:text-purple-300/70">{formatTime(notification.createdAt)}</p>
                         </div>
                       </div>
 
@@ -616,7 +660,7 @@ const NotificationsPage = () => {
                                 e.stopPropagation();
                                 markAsRead(notification._id);
                               }}
-                              className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors mr-1 sm:mr-2 cursor-pointer"
+                              className="p-1 rounded-lg bg-secondary hover:bg-secondary-hover transition-colors mr-1 sm:mr-2 cursor-pointer text-foreground"
                             >
                               <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
@@ -625,7 +669,7 @@ const NotificationsPage = () => {
                                 e.stopPropagation();
                                 deleteNotifications(notification._id);
                               }}
-                              className="p-1 rounded-lg bg-red-600 hover:bg-red-500 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg bg-red-600 hover:bg-red-500 transition-colors cursor-pointer text-white"
                             >
                               <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
@@ -642,7 +686,7 @@ const NotificationsPage = () => {
                 <div className="text-center py-4 sm:py-6">
                   <button
                     onClick={() => setPage(prev => prev + 1)}
-                    className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-purple-600 hover:bg-purple-500 transition-colors text-sm sm:text-base"
+                    className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-purple-600 hover:bg-purple-500 transition-colors text-sm sm:text-base text-white"
                   >
                     Load More
                   </button>

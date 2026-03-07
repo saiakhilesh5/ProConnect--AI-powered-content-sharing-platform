@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/pixora';
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/proconnect';
 
 async function makeAdmin() {
   try {

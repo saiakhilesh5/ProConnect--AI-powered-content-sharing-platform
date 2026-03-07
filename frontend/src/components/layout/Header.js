@@ -43,7 +43,7 @@ const Header = () => {
 
   // Load theme from localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('pixora-theme');
+    const savedTheme = localStorage.getItem('proconnect-theme');
     if (savedTheme === 'light') {
       setDarkMode(false);
     } else {
@@ -56,11 +56,11 @@ const Header = () => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
-      localStorage.setItem('pixora-theme', 'dark');
+      localStorage.setItem('proconnect-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
-      localStorage.setItem('pixora-theme', 'light');
+      localStorage.setItem('proconnect-theme', 'light');
     }
   }, [darkMode]);
 

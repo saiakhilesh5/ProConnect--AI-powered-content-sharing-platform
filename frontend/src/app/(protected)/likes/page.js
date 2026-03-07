@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/context/AuthContext';
 import { useLikesFavorites } from '@/context/LikesFavoritesContext';
-import { CategoryFilter } from '@/app/(protected)/dashboard/components';
+import CategoryFilter from '@/components/features/CategoryFilter';
 import ImageCard from '@/components/cards/ImageCard';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 import { Heart, SquareHeart, HeartOff } from 'lucide-react';

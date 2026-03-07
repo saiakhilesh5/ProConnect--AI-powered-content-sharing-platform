@@ -208,6 +208,36 @@ const userSchema = new Schema(
       type: Date,
       default: null,
     },
+    // Online status and last seen
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+    // Last seen privacy settings
+    lastSeenPrivacy: {
+      type: String,
+      enum: ['everyone', 'contacts', 'nobody'],
+      default: 'everyone',
+    },
+    // Online status privacy
+    onlinePrivacy: {
+      type: String,
+      enum: ['everyone', 'contacts', 'nobody'],
+      default: 'everyone',
+    },
+    // Password reset
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

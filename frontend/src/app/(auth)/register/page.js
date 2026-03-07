@@ -77,7 +77,7 @@ export default function RegisterPage() {
 
       if (success) {
         toast.success("Registration successful!");
-        router.push("/dashboard");
+        router.push("/feed");
       } else {
         toast.error(error || "Registration failed. Please try again.");
       }
@@ -97,23 +97,35 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 transition-all duration-300 bg-background">
-      {/* Floating background elements */}
+    <div className="flex-1 w-full flex flex-col items-center justify-center p-4 transition-all duration-300 bg-background relative">
+      {/* Floating background elements - using static values to prevent hydration mismatch */}
       <div className="absolute inset-0 overflow-hidden z-0">
-        {[...Array(6)].map((_, i) => (
-          <div 
-            key={i}
-            className="floating-shape absolute rounded-full transition-transform duration-3000 ease-in-out bg-primary/10"
-            style={{
-              width: `${Math.random() * 400 + 100}px`,
-              height: `${Math.random() * 400 + 100}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${i * 0.5}s`,
-              animationDuration: `${Math.random() * 20 + 10}s`
-            }}
-          ></div>
-        ))}
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          // Pre-defined static values to avoid SSR/client mismatch
+          const staticShapes = [
+            { width: 280, height: 350, top: 10, left: 5 },
+            { width: 420, height: 280, top: 60, left: 80 },
+            { width: 180, height: 220, top: 30, left: 45 },
+            { width: 320, height: 400, top: 75, left: 20 },
+            { width: 250, height: 300, top: 45, left: 70 },
+            { width: 380, height: 260, top: 85, left: 35 },
+          ];
+          const shape = staticShapes[i];
+          return (
+            <div
+              key={i}
+              className="floating-shape absolute rounded-full transition-transform duration-3000 ease-in-out bg-primary/10"
+              style={{
+                width: `${shape.width}px`,
+                height: `${shape.height}px`,
+                top: `${shape.top}%`,
+                left: `${shape.left}%`,
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${15 + i * 3}s`
+              }}
+            ></div>
+          );
+        })}
       </div>
       
       {/* Main container */}
@@ -147,8 +159,8 @@ export default function RegisterPage() {
               <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
                 Full Name
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <User size={18} />
                 </div>
                 <input
@@ -158,7 +170,8 @@ export default function RegisterPage() {
                   autoComplete="name"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="John Doe"
                 />
               </div>
@@ -168,8 +181,8 @@ export default function RegisterPage() {
               <label htmlFor="email" className="block text-sm font-medium text-foreground">
                 Email Address
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <Mail size={18} />
                 </div>
                 <input
@@ -179,7 +192,8 @@ export default function RegisterPage() {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="your.email@example.com"
                 />
               </div>
@@ -189,8 +203,8 @@ export default function RegisterPage() {
               <label htmlFor="username" className="block text-sm font-medium text-foreground">
                 Username
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <User size={18} />
                 </div>
                 <input
@@ -200,7 +214,8 @@ export default function RegisterPage() {
                   autoComplete="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="johndoe"
                 />
               </div>
@@ -210,8 +225,8 @@ export default function RegisterPage() {
               <label htmlFor="password" className="block text-sm font-medium text-foreground">
                 Password
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <Lock size={18} />
                 </div>
                 <input
@@ -221,12 +236,13 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -238,8 +254,8 @@ export default function RegisterPage() {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
                 Confirm Password
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary border border-border focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <div className="text-muted-foreground flex-shrink-0">
                   <Lock size={18} />
                 </div>
                 <input
@@ -249,12 +265,13 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 rounded-lg text-sm focus:ring-2 focus:ring-offset-1 bg-secondary border border-border text-foreground focus:ring-primary focus:border-primary"
+                  className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -384,47 +401,45 @@ export default function RegisterPage() {
           </div>
           
           <div className="absolute inset-0 z-0 overflow-hidden">
-            {typeof window !== 'undefined' && [...Array(8)].map((_, i) => {
-              const size = Math.random() * 140 + 80;
-              const delay = Math.random() * 5;
-              const duration = Math.random() * 20 + 10;
-              const opacity = Math.random() * 0.5 + 0.2;
-              
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+              // Pre-defined static values to avoid SSR/client mismatch
+              const staticElements = [
+                { size: 120, x: 100, y: 80, delay: 0, duration: 18, opacity: 0.4, rotate: 5 },
+                { size: 180, x: 300, y: 200, delay: 1, duration: 22, opacity: 0.35, rotate: -3 },
+                { size: 100, x: 500, y: 120, delay: 2, duration: 16, opacity: 0.5, rotate: 8 },
+                { size: 160, x: 200, y: 350, delay: 0.5, duration: 20, opacity: 0.3, rotate: -5 },
+                { size: 140, x: 450, y: 280, delay: 1.5, duration: 24, opacity: 0.45, rotate: 4 },
+                { size: 110, x: 350, y: 450, delay: 2.5, duration: 19, opacity: 0.35, rotate: -7 },
+                { size: 130, x: 150, y: 500, delay: 3, duration: 21, opacity: 0.4, rotate: 6 },
+                { size: 170, x: 400, y: 380, delay: 3.5, duration: 17, opacity: 0.3, rotate: -4 },
+              ];
+              const el = staticElements[i];
+
               return (
                 <motion.div
                   key={i}
-                  initial={{ 
-                    x: Math.random() * window.innerWidth / 2, 
-                    y: Math.random() * window.innerHeight,
+                  initial={{
+                    x: el.x,
+                    y: el.y,
                     opacity: 0,
-                    rotate: Math.random() * 20 - 10
+                    rotate: el.rotate
                   }}
-                  animate={{ 
-                    x: [
-                      Math.random() * window.innerWidth / 2, 
-                      Math.random() * window.innerWidth / 2 + 50,
-                      Math.random() * window.innerWidth / 2 - 50,
-                      Math.random() * window.innerWidth / 2
-                    ],
-                    y: [
-                      Math.random() * window.innerHeight, 
-                      Math.random() * window.innerHeight - 50,
-                      Math.random() * window.innerHeight + 50,
-                      Math.random() * window.innerHeight
-                    ],
-                    opacity: opacity,
-                    rotate: [Math.random() * 10 - 5, Math.random() * 10, Math.random() * -10, Math.random() * 10 - 5]
+                  animate={{
+                    x: [el.x, el.x + 50, el.x - 50, el.x],
+                    y: [el.y, el.y - 50, el.y + 50, el.y],
+                    opacity: el.opacity,
+                    rotate: [el.rotate, el.rotate + 5, el.rotate - 5, el.rotate]
                   }}
-                  transition={{ 
-                    duration: duration,
-                    delay: delay,
+                  transition={{
+                    duration: el.duration,
+                    delay: el.delay,
                     repeat: Infinity,
                     repeatType: "reverse"
                   }}
                   className="absolute rounded-lg overflow-hidden shadow-lg"
-                  style={{ 
-                    width: size, 
-                    height: size * 1.25,
+                  style={{
+                    width: el.size,
+                    height: el.size * 1.25,
                     border: '1px solid var(--border)',
                   }}
                 >

@@ -81,9 +81,9 @@ const ImageDetails = ({
             </div>
           )}
           
-          <div className="bg-zinc-800/50 rounded-lg p-3 sm:p-4">
-            <h3 className="font-medium mb-2 text-sm">File Information</h3>
-            <div className="text-xs text-gray-400">
+          <div className="bg-secondary rounded-lg p-3 sm:p-4">
+            <h3 className="font-medium mb-2 text-sm text-foreground">File Information</h3>
+            <div className="text-xs text-muted-foreground">
               <p className="mb-1">Name: {files[0]?.name}</p>
               <p className="mb-1">Size: {files[0]?.size} MB</p>
               <p className="mb-1">
@@ -128,13 +128,13 @@ const ImageDetails = ({
                   AI suggestions applied! You can edit them below.
                 </p>
                 {aiGenerated && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Caption, tags, and category were auto-filled based on AI analysis.
                   </p>
                 )}
               </div>
             ) : files[0]?.uploaded ? (
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-muted-foreground">
                 <p>AI analysis will help generate:</p>
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
                   <li>Suggested caption/title</li>
@@ -144,7 +144,7 @@ const ImageDetails = ({
                 </ul>
               </div>
             ) : (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Upload will trigger automatic AI analysis...
               </p>
             )}
@@ -155,7 +155,7 @@ const ImageDetails = ({
         <div className="md:col-span-7 space-y-4 sm:space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Title <span className="text-red-400">*</span>
               {aiGenerated && aiSuggestions?.caption && (
                 <span className="ml-2 text-xs text-violet-400 font-normal">
@@ -170,7 +170,7 @@ const ImageDetails = ({
               value={imageDetails.title}
               onChange={handleChange}
               placeholder="Give your image a title"
-              className={`bg-zinc-800/70 border ${titleError ? 'border-red-500' : 'border-white/10'} rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base`}
+              className={`bg-background border ${titleError ? 'border-red-500' : 'border-border'} rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base text-foreground`}
             />
             {titleError && (
               <p className="mt-1 text-xs sm:text-sm text-red-400 flex items-center gap-1">
@@ -182,7 +182,7 @@ const ImageDetails = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Description <span className="text-red-400">*</span>
             </label>
             <textarea
@@ -191,7 +191,7 @@ const ImageDetails = ({
               onChange={handleChange}
               placeholder="Describe your image..."
               rows={4}
-              className={`bg-zinc-800/70 border ${descriptionError ? 'border-red-500' : 'border-white/10'} rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition resize-none text-sm sm:text-base`}
+              className={`bg-background border ${descriptionError ? 'border-red-500' : 'border-border'} rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition resize-none text-sm sm:text-base text-foreground`}
             />
             {descriptionError && (
               <p className="mt-1 text-xs sm:text-sm text-red-400 flex items-center gap-1">
@@ -203,7 +203,7 @@ const ImageDetails = ({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Category
               {aiGenerated && aiSuggestions?.category && (
                 <span className="ml-2 text-xs text-violet-400 font-normal">
@@ -216,7 +216,7 @@ const ImageDetails = ({
               name="category"
               value={imageDetails.category}
               onChange={handleChange}
-              className="bg-zinc-800/70 border border-white/10 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition appearance-none custom-select"
+              className="bg-background border border-border rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition appearance-none custom-select text-foreground"
             >
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
@@ -228,7 +228,7 @@ const ImageDetails = ({
 
           {/* Alt Text (Accessibility) */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Alt Text (Accessibility)
               {aiGenerated && aiSuggestions?.altText && (
                 <span className="ml-2 text-xs text-violet-400 font-normal">
@@ -242,32 +242,32 @@ const ImageDetails = ({
               value={altText}
               onChange={(e) => setAltText(e.target.value)}
               placeholder="Describe the image for screen readers..."
-              className="bg-zinc-800/70 border border-white/10 rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base"
+              className="bg-background border border-border rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base text-foreground"
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Helps visually impaired users understand your image
             </p>
           </div>
 
           {/* Collection */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-1">
               Add to Collection <FolderPlus className="h-4 w-4 text-violet-400" />
             </label>
             {loadingCollections ? (
-              <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm py-2">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading collections...
               </div>
             ) : collections.length === 0 ? (
-              <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm py-2">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm py-2">
                 No collections found
               </div>
             ) : (
               <select
                 value={selectedCollectionId || ""}
                 onChange={(e) => setSelectedCollectionId(e.target.value || null)}
-                className="bg-zinc-800/70 border border-white/10 rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition appearance-none custom-select text-sm sm:text-base"
+                className="bg-background border border-border rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition appearance-none custom-select text-sm sm:text-base text-foreground"
               >
                 <option value="">Don&apos;t add to collection</option>
                 {collections.map(collection => (
@@ -277,14 +277,14 @@ const ImageDetails = ({
                 ))}
               </select>
             )}
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               You can add this image to a collection or leave it unassigned
             </p>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Tags
               {aiGenerated && aiSuggestions?.tags?.length > 0 && (
                 <span className="ml-2 text-xs text-violet-400 font-normal">
@@ -301,7 +301,7 @@ const ImageDetails = ({
                   onChange={(e) => setInputTag(e.target.value)}
                   onKeyDown={handleTagInput}
                   placeholder="Add tags (press Enter after each tag)"
-                  className="bg-zinc-800/70 border border-white/10 rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition pr-10 text-sm sm:text-base"
+                  className="bg-background border border-border rounded-lg py-2.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition pr-10 text-sm sm:text-base text-foreground"
                 />
                 <button 
                   onClick={addTag}
@@ -324,13 +324,13 @@ const ImageDetails = ({
                 </span>
               ))}
               {selectedTags.length === 0 && (
-                <span className="text-gray-400 text-xs sm:text-sm">No tags selected</span>
+                <span className="text-muted-foreground text-xs sm:text-sm">No tags selected</span>
               )}
             </div>
 
             {/* Suggested tags */}
             <div>
-              <p className="text-xs text-gray-400 mb-2">Suggestions:</p>
+              <p className="text-xs text-muted-foreground mb-2">Suggestions:</p>
               <div className="flex flex-wrap gap-2">
                 {suggestedTags.map(tag => (
                   <button
@@ -340,7 +340,7 @@ const ImageDetails = ({
                     className={`text-xs py-1.5 px-2.5 rounded-lg touch-manipulation 
                       ${selectedTags.includes(tag) 
                         ? 'bg-violet-800/20 text-violet-700 cursor-not-allowed' 
-                        : 'bg-zinc-800 text-gray-300 active:bg-violet-900/30 active:text-violet-300 hover:bg-violet-900/30 hover:text-violet-300'
+                        : 'bg-secondary text-muted-foreground active:bg-violet-900/30 active:text-violet-300 hover:bg-violet-900/30 hover:text-violet-300'
                       } transition-colors`}
                   >
                     {tag}

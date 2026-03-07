@@ -8,13 +8,23 @@ import {
   deleteComment,
   toggleCommentLike,
   getCommentLikes,
-  testModeration
+  testModeration,
+  getReplySuggestions,
+  getQuickReplies,
+  checkCommentToxicity
 } from '../controllers/comment.controllers.js';
 
 const router = express.Router();
 
 // Test moderation endpoint (for testing only)
 router.post('/test-moderation', testModeration);
+
+// Check comment toxicity endpoint
+router.post('/check-toxicity', authenticateUser, checkCommentToxicity);
+
+// AI Reply suggestions
+router.get('/quick-replies', authenticateUser, getQuickReplies); // Get quick reply templates
+router.get('/:commentId/suggestions', authenticateUser, getReplySuggestions); // Get AI reply suggestions
 
 // Comment routes
 router.post('/:imageId', authenticateUser, createComment); // Create a new comment

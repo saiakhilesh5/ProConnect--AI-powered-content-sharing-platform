@@ -5,23 +5,22 @@ import { useAuth } from '@/context/AuthContext';
 import { useFollow } from '@/context/FollowContext';
 import { useApi } from '@/hooks/useApi';
 import { ProfilePicVerify } from '@/components';
-import RecentActivity from '@/app/(protected)/dashboard/components/RecentActivity';
 import { useCollections } from '@/hooks/useCollections';
 import CreateCollectionModal from '@/app/(protected)/collections/components/CreateCollectionModal.jsx';
 
 // Import profile components
 import {
-  ProfileHeader,
-  ProfileBio,
-  ProfileTabs,
   WorksTab,
+  ReelsTab,
   CollectionsTab,
   FollowTab,
   ActivityTab,
-  AboutTab
+  AboutTab,
+  AIInsightsTab
 } from './components';
+import InstagramProfileLayout from './components/InstagramProfileLayout';
 import LoadingScreen from '@/components/screens/LoadingScreen';
-import { AlertTriangle, Lock, Trash2, UserPlus } from 'lucide-react';
+import { Lock, UserPlus } from 'lucide-react';
 import ProfileSuspended from './components/ProfileSuspended';
 import ProfileDeleted from './components/ProfileDeleted';
 
@@ -99,25 +98,27 @@ const ProfilePage = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    if (userName === user?.username) {
-      setProfile(user);
-      setIsOwnProfile(true);
-      setIsLoading(false);
-    } else {
-      const fetchUser = async () => {
-        try {
-          setError(null);
-          const response = await api.get(`/api/users/${userName}`);
-          setProfile(response.data.data);
-        } catch (err) {
+    const isOwn = userName === user?.username;
+    setIsOwnProfile(isOwn);
+
+    const fetchUser = async () => {
+      try {
+        setError(null);
+        const response = await api.get(`/api/users/${userName}`);
+        setProfile(response.data.data);
+      } catch (err) {
+        if (isOwn && user) {
+          // Fallback to AuthContext user if API fails on own profile
+          setProfile(user);
+        } else {
           const errorMessage = err.response?.data?.message || "Error fetching user";
           setError(errorMessage);
-        } finally {
-          setIsLoading(false);
         }
-      };
-      fetchUser();
-    }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUser();
   }, [user, userName, api, isAuthenticated, following]);
 
   const [activeTab, setActiveTab] = useState('works');
@@ -264,53 +265,46 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-16 md:pb-0">
       <ProfilePicVerify isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
-      {/* Profile Header with cover photo, avatar, name and stats */}
-      <ProfileHeader
+      {/* Instagram-style Profile Header with Tabs */}
+      <InstagramProfileLayout
         profile={profile}
         isOwnProfile={isOwnProfile}
         isFollowing={isFollowing}
         followLoading={followLoading}
         handleFollowToggle={handleFollowToggle}
         setProfileOpen={setProfileOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
-
-      {/* Bio and stats section */}
-      <div className="px-4 sm:px-6 md:px-10">
-        <ProfileBio profile={profile} isOwnProfile={isOwnProfile} />
-
-        {/* Tabs Navigation */}
-        <ProfileTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          profile={profile}
-          isOwnProfile={isOwnProfile}
-        />
-      </div>
 
       {/* Conditional Profile Status Banners */}
       {(profile.profileVisibility === "private" && !isOwnProfile && !isFollowing) ? (
-        <div className="bg-card backdrop-blur-sm border border-border rounded-lg p-4 sm:p-6 my-4 sm:my-6 text-center mx-4 sm:mx-6 md:mx-10">
-          <div className="bg-primary/20 p-3 rounded-full w-fit mx-auto mb-3">
-            <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+        <div className="max-w-[935px] mx-auto px-4">
+          <div className="bg-card border border-border rounded-lg p-6 my-6 text-center">
+            <div className="bg-secondary p-3 rounded-full w-fit mx-auto mb-3">
+              <Lock className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-1">This Account is Private</h3>
+            <p className="text-muted-foreground mb-4">Follow this account to see their photos and videos.</p>
+            <button
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-6 rounded-lg transition-colors flex items-center gap-2 mx-auto"
+            >
+              <UserPlus className="h-4 w-4" />
+              Follow
+            </button>
           </div>
-          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1">This Profile is Private</h3>
-          <p className="text-sm sm:text-base text-muted-foreground mb-4">Follow this user to view their photos and content</p>
-          <button
-            onClick={handleFollowToggle}
-            disabled={followLoading}
-            className="bg-violet-600 hover:bg-violet-500 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 mx-auto text-sm sm:text-base"
-          >
-            <UserPlus className="h-4 w-4" />
-            Follow
-          </button>
         </div>
       ) : (
         // Tab Content
-        <div className="px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8">
+        <div className="max-w-[935px] mx-auto px-4 py-4">
           {activeTab === 'works' && <WorksTab user={profile} />}
+          
+          {activeTab === 'reels' && <ReelsTab user={profile} />}
 
           {activeTab === 'collections' && (
             <CollectionsTab 
@@ -338,11 +332,16 @@ const ProfilePage = () => {
           )}
 
           {activeTab === 'activity' && (
-            isOwnProfile ? <RecentActivity /> : <ActivityTab />
+            <ActivityTab />
+          )}
+
+          {activeTab === 'ai-insights' && isOwnProfile && (
+            <AIInsightsTab />
           )}
 
           {activeTab === 'about' && <AboutTab profile={profile} isOwnProfile={isOwnProfile} />}
-        </div>)}
+        </div>
+      )}
 
       {/* Create Collection Modal */}
       <CreateCollectionModal 

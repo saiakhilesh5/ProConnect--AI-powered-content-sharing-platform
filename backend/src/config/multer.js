@@ -37,6 +37,10 @@ const autoStorage = new CloudinaryStorage({
   },
 });
 
+// Memory storage for message uploads (images, voice, files)
+// These need buffer access for manual Cloudinary upload with custom folders
+const memoryStorage = multer.memoryStorage();
+
 const upload = multer({ 
   storage: autoStorage,
   limits: {
@@ -52,4 +56,22 @@ export const uploadVideo = multer({
   },
 });
 
+// Memory-based upload for message attachments (uses buffer for manual Cloudinary upload)
+export const uploadMessageAttachment = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB max for message attachments
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images, videos, and audio for messages
+    const allowedTypes = /image\/(jpeg|jpg|png|gif|webp)|video\/(mp4|webm|mov)|audio\/(webm|mp3|wav|ogg)/;
+    if (allowedTypes.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type for message attachment'), false);
+    }
+  },
+});
+
+export { upload };
 export default upload;

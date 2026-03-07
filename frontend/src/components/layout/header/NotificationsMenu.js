@@ -562,14 +562,15 @@ const NotificationsMenu = ({ activeDropdown, toggleDropdown }) => {
               </div>
 
               {/* Search bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted border border-border focus-within:ring-1 focus-within:ring-primary w-full">
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <input
                   type="text"
                   placeholder="Search notifications..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                 />
               </div>
             </div>

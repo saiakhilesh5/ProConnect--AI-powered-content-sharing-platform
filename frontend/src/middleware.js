@@ -7,7 +7,6 @@ const ROUTES = {
   // Routes requiring authentication
   protected: [
     '/collections',
-    '/dashboard',
     '/notifications',
     '/feed',
     '/tags',
@@ -25,7 +24,7 @@ const ROUTES = {
     '/likes',
   ],
   
-  // Routes that redirect to dashboard when authenticated
+  // Routes that redirect to feed when authenticated
   authRedirect: [
     '/login',
     '/register',
@@ -62,7 +61,7 @@ export default async function middleware(request) {
   }
   
   if (isAuthenticated && isAuthRedirectRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/feed', request.url));
   }
 
   return NextResponse.next();
@@ -73,7 +72,6 @@ export const config = {
   matcher: [
     // Protected routes
     '/collections/:path*',
-    '/dashboard/:path*',
     '/feed/:path*',
     '/image/:path*',
     '/notifications/:path*',

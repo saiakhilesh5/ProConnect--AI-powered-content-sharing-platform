@@ -7,7 +7,7 @@ import { Image } from "../models/image.model.js";
 import jwt from "jsonwebtoken";
 
 // Admin credentials from environment variables
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@pixora.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@proconnect.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
 
 /**

@@ -10,10 +10,13 @@ import {
   User,
   TrendingUp,
   ImageIcon,
-  Lightbulb
+  Lightbulb,
+  Heart,
+  ExternalLink
 } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { useChatAssistant } from '@/context/ChatAssistantContext';
+import Link from 'next/link';
 
 const QUICK_PROMPTS = [
   { icon: TrendingUp, text: "Why isn't my post trending?", label: "Trending Help" },
@@ -72,9 +75,11 @@ const AIChatAssistant = () => {
       });
 
       if (response.data?.data?.reply) {
+        const imgs = response.data.data.images;
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: response.data.data.reply 
+          content: response.data.data.reply,
+          images: Array.isArray(imgs) && imgs.length > 0 ? imgs : undefined
         }]);
       }
     } catch (error) {
@@ -123,7 +128,7 @@ const AIChatAssistant = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-120px)] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-100px)] bg-card border border-border rounded-2xl shadow-2xl flex flex-col">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary/20 to-accent/20 border-b border-border p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
@@ -165,12 +170,55 @@ const AIChatAssistant = () => {
                     <Bot className="w-4 h-4 text-white" />
                   )}
                 </div>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                  message.role === 'user'
-                    ? 'bg-primary text-white rounded-br-md'
-                    : 'bg-secondary text-foreground rounded-bl-md'
-                }`}>
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <div className={`max-w-[85%] flex flex-col gap-2`}>
+                  <div className={`rounded-2xl px-4 py-2.5 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-white rounded-br-md'
+                      : 'bg-secondary text-foreground rounded-bl-md'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                  {/* Image Results */}
+                  {message.images && message.images.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {message.images.map((img) => (
+                        <div key={img._id} className="bg-card border border-border rounded-xl overflow-hidden flex gap-2 p-2">
+                          <Link href={`/images/${img._id}`} className="flex-shrink-0">
+                            <img
+                              src={img.imageUrl}
+                              alt={img.title}
+                              className="w-16 h-16 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                            />
+                          </Link>
+                          <div className="flex-1 min-w-0 flex flex-col justify-between">
+                            <Link href={`/images/${img._id}`} className="block">
+                              <p className="text-xs font-medium text-foreground line-clamp-2 hover:text-primary transition-colors">{img.title}</p>
+                            </Link>
+                            <div className="flex items-center justify-between mt-1">
+                              <Link
+                                href={`/profile/@${img.author.username}`}
+                                className="flex items-center gap-1 group"
+                              >
+                                {img.author.profilePicture ? (
+                                  <img src={img.author.profilePicture} alt={img.author.username} className="w-4 h-4 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <User className="w-2.5 h-2.5 text-primary" />
+                                  </div>
+                                )}
+                                <span className="text-[11px] text-muted-foreground group-hover:text-primary transition-colors truncate max-w-[80px]">@{img.author.username}</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                              </Link>
+                              <div className="flex items-center gap-0.5">
+                                <Heart className="w-3 h-3 text-red-400 fill-red-400" />
+                                <span className="text-[11px] text-muted-foreground">{img.likesCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

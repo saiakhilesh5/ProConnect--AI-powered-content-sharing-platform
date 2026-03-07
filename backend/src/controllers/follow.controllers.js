@@ -107,3 +107,51 @@ export const checkFollowStatus = asyncHandler(async (req, res) => {
 
   res.status(200).json(new ApiResponse(200, "Follow status retrieved.", { isFollowing }));
 });
+
+/**
+ * @desc Toggle follow/unfollow a user
+ * @route POST /api/follow/toggle/:userId
+ * @access Private
+ */
+export const toggleFollow = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const followerId = req.user._id;
+
+  if (followerId.toString() === userId) {
+    throw new ApiError(400, "You cannot follow yourself.");
+  }
+
+  // Check current follow status
+  const isCurrentlyFollowing = await Follow.checkFollowStatus(followerId, userId);
+
+  if (isCurrentlyFollowing) {
+    // Unfollow
+    await Follow.unfollowUser(followerId, userId);
+    await User.findByIdAndUpdate(userId, { $inc: { followersCount: -1 } });
+    await User.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } });
+
+    res.status(200).json(new ApiResponse(200, "User unfollowed successfully.", { isFollowing: false }));
+  } else {
+    // Follow
+    await Follow.followUser(followerId, userId);
+    await User.findByIdAndUpdate(userId, { $inc: { followersCount: 1 } });
+    await User.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } });
+    
+    // Update interaction points for following
+    await updateInteractionPoints(followerId, 'follow');
+    
+    // Update badge for followed user based on followers count
+    await updateUserBadge(userId);
+
+    // Create notification for the user being followed
+    await Notification.createNotification({
+      recipient: userId,
+      sender: followerId,
+      type: 'follow',
+      content: 'started following you',
+      relatedUser: followerId
+    });
+
+    res.status(200).json(new ApiResponse(200, "User followed successfully.", { isFollowing: true }));
+  }
+});

@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_API || 'http://localhost:8000';
+
 const ThemeContext = createContext();
 
 export const useTheme = () => {
@@ -17,13 +19,14 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState('dark');
   const [isLoading, setIsLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated } = useAuth() || {};
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const initializeTheme = () => {
       // Check localStorage first
-      const savedTheme = localStorage.getItem('pixora-theme');
+      const savedTheme = localStorage.getItem('proconnect-theme');
       if (savedTheme) {
         setThemeState(savedTheme);
         applyTheme(savedTheme);
@@ -35,6 +38,7 @@ export const ThemeProvider = ({ children }) => {
         applyTheme(systemTheme);
       }
       setIsLoading(false);
+      setMounted(true);
     };
 
     initializeTheme();
@@ -42,7 +46,7 @@ export const ThemeProvider = ({ children }) => {
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
-      if (!localStorage.getItem('pixora-theme')) {
+      if (!localStorage.getItem('proconnect-theme')) {
         const newTheme = e.matches ? 'dark' : 'light';
         setThemeState(newTheme);
         applyTheme(newTheme);
@@ -60,7 +64,7 @@ export const ThemeProvider = ({ children }) => {
       if (userTheme !== theme) {
         setThemeState(userTheme);
         applyTheme(userTheme);
-        localStorage.setItem('pixora-theme', userTheme);
+        localStorage.setItem('proconnect-theme', userTheme);
       }
     }
   }, [isAuthenticated, user]);
@@ -93,14 +97,14 @@ export const ThemeProvider = ({ children }) => {
     
     // Update state and localStorage
     setThemeState(newTheme);
-    localStorage.setItem('pixora-theme', newTheme);
+    localStorage.setItem('proconnect-theme', newTheme);
     applyTheme(newTheme);
 
     // Sync to database if user is authenticated
     if (isAuthenticated) {
       try {
         await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/preferences`,
+          `${API_URL}/api/users/preferences`,
           { theme: newTheme },
           { withCredentials: true }
         );
@@ -124,13 +128,13 @@ export const ThemeProvider = ({ children }) => {
     document.body.classList.add('theme-transitioning');
     
     setThemeState(newTheme);
-    localStorage.setItem('pixora-theme', newTheme);
+    localStorage.setItem('proconnect-theme', newTheme);
     applyTheme(newTheme);
 
     if (isAuthenticated) {
       try {
         await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/preferences`,
+          `${API_URL}/api/users/preferences`,
           { theme: newTheme },
           { withCredentials: true }
         );
@@ -151,6 +155,7 @@ export const ThemeProvider = ({ children }) => {
     isLight: theme === 'light',
     isLoading,
     isTransitioning,
+    mounted,
     toggleTheme,
     setTheme,
   };

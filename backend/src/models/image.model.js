@@ -94,6 +94,22 @@ const imageSchema = new Schema(
       type: Boolean,
       default: true, // Whether the image is public or private
     },
+    viewsCount: {
+      type: Number,
+      default: 0, // View count for analytics
+    },
+    sharesCount: {
+      type: Number,
+      default: 0, // Share count for analytics
+    },
+    perceptualHash: {
+      type: String,
+      default: null, // Perceptual hash for copyright detection
+    },
+    copyrightChecked: {
+      type: Boolean,
+      default: false, // Whether copyright was checked on upload
+    },
   },
   {
     timestamps: true, // Automatically handle createdAt and updatedAt fields

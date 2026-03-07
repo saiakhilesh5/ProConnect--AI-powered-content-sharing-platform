@@ -46,7 +46,7 @@ const DeveloperInfo = () => {
               <div>
                 <h4 className="text-white font-medium text-sm mb-2">About This Project</h4>
                 <p className="text-zinc-300 text-xs leading-relaxed">
-                  Pixora is a modern image sharing platform built with Next.js by Abdul Rehman
+                  ProConnect is a modern image sharing platform built with Next.js
                 </p>
               </div>
 

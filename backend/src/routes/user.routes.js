@@ -13,7 +13,13 @@ import {
   checkUserAvailability,
   googleLoginUser,
   getLoginHistory,
-  getUserAnalytics
+  getUserAnalytics,
+  getCreatorGrowthRecommendations,
+  getCreatorCompetitorInsights,
+  getSuggestedUsers,
+  updateUserPreferences,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/user.controllers.js";
 
 const router = express.Router();
@@ -24,11 +30,17 @@ router.post("/login", loginUser);
 router.post("/google-login", googleLoginUser);
 router.post("/logout", logoutUser);
 router.post("/check-availability", checkUserAvailability);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 // User profile routes (Protected)
 router.get("/me", authenticateUser, getLoggedInUser);
 router.get("/login-history", authenticateUser, getLoginHistory);
 router.get("/analytics", authenticateUser, getUserAnalytics);
+router.get("/growth-recommendations", authenticateUser, getCreatorGrowthRecommendations);
+router.get("/competitor-insights", authenticateUser, getCreatorCompetitorInsights);
+router.get("/suggestions", authenticateUser, getSuggestedUsers);
+router.patch("/preferences", authenticateUser, updateUserPreferences);
 router.patch("/:userId", authenticateUser, updateUserProfile);
 router.patch("/:userId/password", authenticateUser, updateUserPassword);
 

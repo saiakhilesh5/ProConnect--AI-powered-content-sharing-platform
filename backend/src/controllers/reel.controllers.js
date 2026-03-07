@@ -10,6 +10,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import cloudinary from "../config/cloudinary.js";
 import { updateUserBadge } from "../utils/userUpdates.js";
+import { analyzeReel, moderateReelContent } from "../utils/aiReelAnalyzer.js";
+import { moderateComment, addUserWarning } from "../utils/contentModeration.js";
+import { getSmartReelFeed, recordReelInteraction } from "../utils/aiSmartReelRanking.js";
 
 /**
  * @desc Upload a new reel
@@ -18,7 +21,7 @@ import { updateUserBadge } from "../utils/userUpdates.js";
  */
 export const uploadReel = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { caption, category, tags, visibility, commentsAllowed, duration, aspectRatio, music } = req.body;
+  const { caption, category, tags, visibility, commentsAllowed, duration, aspectRatio, music, skipAI } = req.body;
 
   if (!req.file) {
     throw new ApiError(400, "Video file is required");
@@ -27,7 +30,7 @@ export const uploadReel = asyncHandler(async (req, res) => {
   // Upload video to Cloudinary
   const result = await cloudinary.uploader.upload(req.file.path, {
     resource_type: "video",
-    folder: "pixora/reels",
+    folder: "proconnect/reels",
     eager: [
       { format: "jpg", transformation: [{ width: 400, height: 711, crop: "fill" }] }
     ],
@@ -37,9 +40,30 @@ export const uploadReel = asyncHandler(async (req, res) => {
   // Get thumbnail from eager transformation
   const thumbnailUrl = result.eager?.[0]?.secure_url || result.secure_url.replace('.mp4', '.jpg');
 
+  // === NSFW CONTENT MODERATION ===
+  // Check video frames for inappropriate content before saving
+  console.log('Checking reel for inappropriate content...');
+  const contentModResult = await moderateReelContent(result.secure_url, thumbnailUrl);
+  
+  if (!contentModResult.safe) {
+    // Delete the uploaded video from Cloudinary
+    await cloudinary.uploader.destroy(result.public_id, { resource_type: 'video' });
+    
+    throw new ApiError(400, `Content rejected: ${contentModResult.reason || 'This content violates our community guidelines'}. Please upload appropriate content.`);
+  }
+
+  // === CAPTION MODERATION ===
+  if (caption) {
+    const captionModResult = await moderateCaption(caption);
+    if (!captionModResult.safe) {
+      await cloudinary.uploader.destroy(result.public_id, { resource_type: 'video' });
+      throw new ApiError(400, `Caption rejected: ${captionModResult.reason || 'Inappropriate language detected'}. Please use respectful language.`);
+    }
+  }
+
   const reel = await Reel.create({
     user: userId,
-    caption,
+    caption: caption || '',
     videoUrl: result.secure_url,
     publicId: result.public_id,
     thumbnailUrl,
@@ -50,6 +74,8 @@ export const uploadReel = asyncHandler(async (req, res) => {
     visibility: visibility || 'public',
     commentsAllowed: commentsAllowed !== 'false',
     music: music ? JSON.parse(music) : null,
+    aiModerated: true,
+    moderationScore: contentModResult.confidence || 0,
   });
 
   // Update user's post count
@@ -60,6 +86,42 @@ export const uploadReel = asyncHandler(async (req, res) => {
 
   res.status(201).json(
     new ApiResponse(201, "Reel uploaded successfully", reel)
+  );
+});
+
+/**
+ * @desc Analyze reel with AI and get suggested metadata
+ * @route POST /api/reels/analyze
+ * @access Private
+ */
+export const analyzeReelWithAI = asyncHandler(async (req, res) => {
+  const { videoUrl, thumbnailUrl } = req.body;
+
+  if (!videoUrl || !thumbnailUrl) {
+    throw new ApiError(400, "Video URL and thumbnail URL are required");
+  }
+
+  console.log('AI analyzing reel content...');
+  
+  // Run AI analysis and content moderation in parallel
+  const [analysis, moderation] = await Promise.all([
+    analyzeReel(videoUrl, thumbnailUrl),
+    moderateReelContent(videoUrl, thumbnailUrl)
+  ]);
+
+  if (!moderation.safe) {
+    throw new ApiError(400, `Content may violate guidelines: ${moderation.reason}. Consider uploading different content.`);
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Reel analyzed successfully", {
+      suggestions: analysis,
+      moderation: {
+        safe: moderation.safe,
+        confidence: moderation.confidence,
+        category: moderation.category
+      }
+    })
   );
 });
 
@@ -124,7 +186,7 @@ export const getReel = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc Get reels feed (infinite scroll)
+ * @desc Get reels feed (infinite scroll) - AI-powered personalized ranking
  * @route GET /api/reels/feed
  * @access Private
  */
@@ -132,37 +194,39 @@ export const getReelsFeed = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
   const { category } = req.query;
 
-  // Build query
-  let query = { visibility: 'public' };
-  
-  if (category && category !== 'all') {
-    query.category = category;
+  // Use AI-powered smart feed ranking
+  const smartFeedResult = await getSmartReelFeed(userId.toString(), {
+    page,
+    limit,
+    category
+  });
+
+  if (!smartFeedResult.success) {
+    throw new ApiError(500, "Failed to fetch reels feed");
   }
 
-  const reels = await Reel.find(query)
-    .populate('user', 'fullName username profilePicture isVerified badge')
-    .sort({ trendingScore: -1, createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-
-  // Get like and save status for each reel
+  // Get like, save, and follow status for each reel
   const reelsWithStatus = await Promise.all(
-    reels.map(async (reel) => {
+    smartFeedResult.reels.map(async (reel) => {
       const isLiked = await ReelLike.exists({ user: userId, reel: reel._id });
       const isSaved = await ReelSave.exists({ user: userId, reel: reel._id });
+      const isFollowingUser = reel.user?._id 
+        ? await Follow.exists({ follower: userId, following: reel.user._id })
+        : false;
       
       return {
-        ...reel.toObject(),
+        ...reel,
         isLiked: !!isLiked,
         isSaved: !!isSaved,
+        user: reel.user ? {
+          ...reel.user,
+          isFollowing: !!isFollowingUser,
+        } : reel.user,
       };
     })
   );
-
-  const total = await Reel.countDocuments(query);
 
   res.status(200).json(
     new ApiResponse(200, "Reels feed fetched successfully", {
@@ -170,10 +234,12 @@ export const getReelsFeed = asyncHandler(async (req, res) => {
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit),
-        hasMore: page * limit < total,
+        total: smartFeedResult.metadata.total,
+        pages: smartFeedResult.metadata.pages,
+        hasMore: smartFeedResult.metadata.hasNextPage,
       },
+      // Include AI debug info in development
+      ...(process.env.NODE_ENV !== 'production' && { aiDebug: smartFeedResult.debug })
     })
   );
 });
@@ -202,16 +268,21 @@ export const getFollowingReels = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  // Get like and save status
+  // Get like and save status (isFollowing is always true since this is following feed)
   const reelsWithStatus = await Promise.all(
     reels.map(async (reel) => {
       const isLiked = await ReelLike.exists({ user: userId, reel: reel._id });
       const isSaved = await ReelSave.exists({ user: userId, reel: reel._id });
+      const reelObj = reel.toObject();
       
       return {
-        ...reel.toObject(),
+        ...reelObj,
         isLiked: !!isLiked,
         isSaved: !!isSaved,
+        user: reelObj.user ? {
+          ...reelObj.user,
+          isFollowing: true, // Always true in following feed
+        } : reelObj.user,
       };
     })
   );
@@ -316,6 +387,9 @@ export const toggleLikeReel = asyncHandler(async (req, res) => {
     reel.likesCount = Math.max(0, reel.likesCount - 1);
     await reel.save();
 
+    // Decrement reel owner's likesCount
+    await User.findByIdAndUpdate(reel.user, { $inc: { likesCount: -1 } });
+
     res.status(200).json(
       new ApiResponse(200, "Reel unliked", { isLiked: false, likesCount: reel.likesCount })
     );
@@ -326,12 +400,18 @@ export const toggleLikeReel = asyncHandler(async (req, res) => {
     reel.trendingScore = reel.calculateTrendingScore();
     await reel.save();
 
+    // Increment reel owner's likesCount
+    await User.findByIdAndUpdate(reel.user, { $inc: { likesCount: 1 } });
+
+    // Update badge for the reel owner based on likes
+    await updateUserBadge(reel.user);
+
     // Send notification if not liking own reel
     if (reel.user.toString() !== userId.toString()) {
       await Notification.createNotification({
         recipient: reel.user,
         sender: userId,
-        type: 'like',
+        type: 'reel_like',
         content: 'liked your reel',
         relatedReel: reelId,
       });
@@ -387,7 +467,7 @@ export const toggleSaveReel = asyncHandler(async (req, res) => {
  */
 export const addReelComment = asyncHandler(async (req, res) => {
   const { reelId } = req.params;
-  const { text, parentCommentId } = req.body;
+  const { text, parentCommentId, mentions } = req.body;
   const userId = req.user._id;
 
   const reel = await Reel.findById(reelId);
@@ -399,10 +479,41 @@ export const addReelComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Comments are disabled for this reel");
   }
 
+  // Check if user is banned
+  const user = await User.findById(userId);
+  if (user?.isBanned) {
+    throw new ApiError(403, "Your account has been suspended due to policy violations");
+  }
+
+  // === COMMENT TOXICITY MODERATION (same as posts) ===
+  const moderation = await moderateComment(text);
+  
+  // Calculate toxicity level for display (0-100 scale)
+  const toxicityScore = Math.round((moderation.scores?.TOXICITY || 0) * 100);
+  
+  if (!moderation.safe) {
+    // Add warning to user
+    const warningCount = await addUserWarning(User, userId, moderation.reason, 'reel_comment');
+    
+    // Return error with toxicity info
+    const warningMessage = warningCount >= 3 
+      ? "Your account has been suspended due to multiple policy violations."
+      : `Your comment was blocked due to ${moderation.reason}. Warning ${warningCount}/3.`;
+    
+    throw new ApiError(400, warningMessage, {
+      blocked: true,
+      reason: moderation.reason,
+      warningCount,
+      toxicityScore
+    });
+  }
+
   const commentData = {
     user: userId,
     reel: reelId,
     text,
+    mentions: mentions || [],
+    moderationScore: toxicityScore,
   };
 
   if (parentCommentId) {
@@ -418,17 +529,19 @@ export const addReelComment = asyncHandler(async (req, res) => {
   const comment = await ReelComment.create(commentData);
   await comment.populate('user', 'fullName username profilePicture isVerified');
 
-  // Update reel comments count
-  reel.commentsCount += 1;
-  reel.trendingScore = reel.calculateTrendingScore();
-  await reel.save();
+  // Update reel comments count only for top-level comments (not replies)
+  if (!parentCommentId) {
+    reel.commentsCount += 1;
+    reel.trendingScore = reel.calculateTrendingScore();
+    await reel.save();
+  }
 
   // Send notification
   if (reel.user.toString() !== userId.toString()) {
     await Notification.createNotification({
       recipient: reel.user,
       sender: userId,
-      type: 'comment',
+      type: 'reel_comment',
       content: `commented: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
       relatedReel: reelId,
       relatedComment: comment._id,
@@ -496,6 +609,9 @@ export const deleteReel = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Unauthorized to delete this reel");
   }
 
+  // Get the likes count before deleting to update user stats
+  const reelLikesCount = reel.likesCount || 0;
+
   // Delete from Cloudinary
   await cloudinary.uploader.destroy(reel.publicId, { resource_type: 'video' });
   if (reel.thumbnailPublicId) {
@@ -510,8 +626,13 @@ export const deleteReel = asyncHandler(async (req, res) => {
   // Delete the reel
   await Reel.deleteOne({ _id: reelId });
 
-  // Update user's post count
-  await User.findByIdAndUpdate(userId, { $inc: { postsCount: -1 } });
+  // Update user's stats: decrement postsCount and likesCount
+  await User.findByIdAndUpdate(userId, { 
+    $inc: { 
+      postsCount: -1,
+      likesCount: -reelLikesCount
+    } 
+  });
 
   res.status(200).json(
     new ApiResponse(200, "Reel deleted successfully")
@@ -622,6 +743,194 @@ export const getSavedReels = asyncHandler(async (req, res) => {
         total,
         pages: Math.ceil(total / limit),
       },
+    })
+  );
+});
+
+/**
+ * @desc Like/Unlike a reel comment
+ * @route POST /api/reels/comments/:commentId/like
+ * @access Private
+ */
+export const toggleLikeComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user._id;
+
+  const comment = await ReelComment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  // Use a simple array field for likedBy - we'll add this dynamically
+  const likedBySet = new Set(comment.likedBy?.map(id => id.toString()) || []);
+  const userIdStr = userId.toString();
+
+  let isLiked;
+  if (likedBySet.has(userIdStr)) {
+    // Unlike
+    likedBySet.delete(userIdStr);
+    isLiked = false;
+  } else {
+    // Like
+    likedBySet.add(userIdStr);
+    isLiked = true;
+  }
+
+  comment.likedBy = Array.from(likedBySet);
+  comment.likesCount = likedBySet.size;
+  await comment.save();
+
+  res.status(200).json(
+    new ApiResponse(200, isLiked ? "Comment liked" : "Comment unliked", {
+      isLiked,
+      likesCount: comment.likesCount,
+    })
+  );
+});
+
+/**
+ * @desc Get replies for a comment
+ * @route GET /api/reels/comments/:commentId/replies
+ * @access Public
+ */
+export const getCommentReplies = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const replies = await ReelComment.find({
+    parentComment: commentId,
+  })
+    .populate('user', 'fullName username profilePicture isVerified')
+    .sort({ createdAt: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await ReelComment.countDocuments({ parentComment: commentId });
+
+  res.status(200).json(
+    new ApiResponse(200, "Replies fetched successfully", {
+      replies,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+    })
+  );
+});
+
+/**
+ * @desc Delete a reel comment
+ * @route DELETE /api/reels/comments/:commentId
+ * @access Private
+ */
+export const deleteComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user._id;
+
+  const comment = await ReelComment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  // Check authorization
+  const reel = await Reel.findById(comment.reel);
+  if (comment.user.toString() !== userId.toString() && reel?.user.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized to delete this comment");
+  }
+
+  // If it's a parent comment, delete all replies
+  if (!comment.parentComment) {
+    await ReelComment.deleteMany({ parentComment: commentId });
+  } else {
+    // Decrement parent's reply count
+    await ReelComment.findByIdAndUpdate(comment.parentComment, {
+      $inc: { repliesCount: -1 },
+    });
+  }
+
+  await ReelComment.deleteOne({ _id: commentId });
+
+  // Update reel comment count only for top-level comments (not replies)
+  if (reel && !comment.parentComment) {
+    reel.commentsCount = Math.max(0, reel.commentsCount - 1);
+    await reel.save();
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Comment deleted successfully")
+  );
+});
+
+/**
+ * @desc Search users for @mention (autocomplete)
+ * @route GET /api/reels/mentions/search
+ * @access Private
+ */
+export const searchUsersForMention = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+  
+  if (!query || query.length < 1) {
+    return res.status(200).json(
+      new ApiResponse(200, "Users fetched", [])
+    );
+  }
+
+  const users = await User.find({
+    $or: [
+      { username: { $regex: query, $options: 'i' } },
+      { fullName: { $regex: query, $options: 'i' } },
+    ],
+  })
+    .select('_id fullName username profilePicture isVerified')
+    .limit(10);
+
+  res.status(200).json(
+    new ApiResponse(200, "Users fetched for mention", users)
+  );
+});
+
+/**
+ * @desc Check comment text for toxicity (real-time)
+ * @route POST /api/reels/comments/check-toxicity
+ * @access Private
+ */
+export const checkCommentToxicity = asyncHandler(async (req, res) => {
+  const { text } = req.body;
+  
+  if (!text || text.trim().length === 0) {
+    return res.status(200).json(
+      new ApiResponse(200, "No text to analyze", { 
+        toxicityScore: 0, 
+        safe: true,
+        level: 'safe'
+      })
+    );
+  }
+
+  const moderation = await moderateComment(text);
+  const toxicityScore = Math.round((moderation.scores?.TOXICITY || 0) * 100);
+  
+  // Determine level for UI display
+  let level = 'safe';
+  if (toxicityScore >= 70) {
+    level = 'high';
+  } else if (toxicityScore >= 40) {
+    level = 'medium';
+  } else if (toxicityScore >= 20) {
+    level = 'low';
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Toxicity check complete", {
+      toxicityScore,
+      safe: moderation.safe,
+      level,
+      reason: moderation.reason || null
     })
   );
 });

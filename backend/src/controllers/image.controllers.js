@@ -10,9 +10,16 @@ import { Review } from "../models/review.model.js";
 import { Report } from "../models/report.model.js";
 import { Notification } from "../models/notification.model.js";
 import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
+import { Favorite } from "../models/favorite.model.js";
+import { Message } from "../models/message.model.js";
+import { Conversation } from "../models/conversation.model.js";
 import { analyzeImage } from "../utils/aiImageAnalysis.js";
 import { moderateImage, addUserWarning } from "../utils/contentModeration.js";
 import { chatWithAssistant, suggestCaptions } from "../utils/aiChatAssistant.js";
+import { checkCopyright, storeImageHash } from "../utils/aiCopyrightDetection.js";
+import { semanticSearch, findSimilarImages, getSearchSuggestions } from "../utils/aiSemanticSearch.js";
+import { getSmartFeed, getForYouRecommendations } from "../utils/aiSmartFeedRanking.js";
 
 
 // Get image by ID
@@ -295,9 +302,30 @@ export const deleteImage = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Not authorized to delete this image");
   }
 
+  // Delete the image from Cloudinary
+  if (image.publicId) {
+    await cloudinary.uploader.destroy(image.publicId);
+  }
+
+  // Get the likes count before deleting to update user stats
+  const imageLikesCount = image.likesCount || 0;
+  const imageSize = image.imageSize || 0;
+
+  // Delete related data
+  await Like.deleteMany({ image: imageId });
+  await Comment.deleteMany({ image: imageId });
+  await Favorite.deleteMany({ image: imageId });
+
   await image.deleteOne();
 
-  await User.findByIdAndUpdate(req.user._id, { $inc: { postsCount: -1 } });
+  // Update user stats: decrement postsCount, likesCount, and storageUsed
+  await User.findByIdAndUpdate(req.user._id, { 
+    $inc: { 
+      postsCount: -1,
+      likesCount: -imageLikesCount,
+      storageUsed: -imageSize
+    } 
+  });
   
   // Update user badge after post count change
   await updateUserBadge(req.user._id);
@@ -727,6 +755,41 @@ export const uploadImageFile = asyncHandler(async (req, res) => {
   // The file is already uploaded to cloudinary by multer-storage-cloudinary
   const imageUrl = req.file.path;
   const publicId = req.file.filename;
+
+  // === NSFW CONTENT MODERATION ===
+  // Check image for inappropriate content before saving
+  console.log('Checking image for inappropriate content...');
+  const contentModResult = await moderateImage(imageUrl);
+  
+  if (!contentModResult.safe) {
+    // Delete the uploaded image from Cloudinary
+    await cloudinary.uploader.destroy(publicId);
+    
+    // Add warning to user
+    const warningCount = await addUserWarning(User, req.user._id, contentModResult.reason, 'image');
+    
+    const warningMessage = warningCount >= 3 
+      ? "Your account has been suspended due to multiple policy violations."
+      : `Content rejected: ${contentModResult.reason || 'This content violates our community guidelines'}. Warning ${warningCount}/3.`;
+    
+    throw new ApiError(400, warningMessage);
+  }
+
+  // === TEXT CONTENT MODERATION ===
+  // Check title and description for inappropriate language
+  const { moderateComment } = await import('../utils/contentModeration.js');
+  
+  const titleCheck = await moderateComment(title);
+  if (!titleCheck.safe) {
+    await cloudinary.uploader.destroy(publicId);
+    throw new ApiError(400, `Title rejected: ${titleCheck.reason || 'Inappropriate language detected'}. Please use respectful language.`);
+  }
+  
+  const descCheck = await moderateComment(description);
+  if (!descCheck.safe) {
+    await cloudinary.uploader.destroy(publicId);
+    throw new ApiError(400, `Description rejected: ${descCheck.reason || 'Inappropriate language detected'}. Please use respectful language.`);
+  }
 
   // Parse tags if they're sent as a string
   let parsedTags = [];
@@ -1189,6 +1252,7 @@ export const aiChat = asyncHandler(async (req, res) => {
   res.status(200).json(
     new ApiResponse(200, "AI response generated", {
       reply: result.message,
+      images: result.images || [],
       context: result.context
     })
   );
@@ -1216,5 +1280,245 @@ export const getCaptionSuggestions = asyncHandler(async (req, res) => {
     new ApiResponse(200, "Caption suggestions generated", {
       captions: result.captions
     })
+  );
+});
+
+/**
+ * @desc Check image for copyright issues
+ * @route POST /api/images/check-copyright
+ * @access Private
+ */
+export const checkImageCopyright = asyncHandler(async (req, res) => {
+  const { imageUrl, category } = req.body;
+
+  if (!imageUrl) {
+    throw new ApiError(400, "Image URL is required");
+  }
+
+  const result = await checkCopyright(imageUrl, category);
+
+  res.status(200).json(
+    new ApiResponse(200, "Copyright check completed", {
+      hasCopyrightIssue: result.hasCopyrightIssue,
+      confidence: result.confidence,
+      matches: result.matches,
+      method: result.method
+    })
+  );
+});
+
+/**
+ * @desc Semantic search for images
+ * @route GET /api/images/semantic-search
+ * @access Private
+ */
+export const semanticImageSearch = asyncHandler(async (req, res) => {
+  const { q, page, limit } = req.query;
+
+  if (!q || q.trim().length === 0) {
+    throw new ApiError(400, "Search query is required");
+  }
+
+  // Get user's following list for visibility filtering
+  const followingList = await Follow.find({ follower: req.user._id }).select("following");
+  const followingIds = followingList.map(f => f.following.toString());
+
+  const result = await semanticSearch(q, {
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 20,
+    userId: req.user._id,
+    followingIds
+  });
+
+  if (!result.success) {
+    throw new ApiError(500, result.error || "Search failed");
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Semantic search completed", result.results, result.metadata)
+  );
+});
+
+/**
+ * @desc Find similar images
+ * @route POST /api/images/find-similar
+ * @access Private
+ */
+export const findSimilar = asyncHandler(async (req, res) => {
+  const { imageUrl } = req.body;
+
+  if (!imageUrl) {
+    throw new ApiError(400, "Image URL is required");
+  }
+
+  const result = await findSimilarImages(imageUrl, 10);
+
+  if (!result.success) {
+    throw new ApiError(500, result.error || "Failed to find similar images");
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Similar images found", {
+      analysis: result.referenceAnalysis,
+      similarImages: result.results
+    })
+  );
+});
+
+/**
+ * @desc Get search suggestions
+ * @route GET /api/images/search-suggestions
+ * @access Private
+ */
+export const getImageSearchSuggestions = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+
+  const suggestions = await getSearchSuggestions(q);
+
+  res.status(200).json(
+    new ApiResponse(200, "Suggestions fetched", suggestions)
+  );
+});
+
+/**
+ * @desc Get AI-ranked smart feed
+ * @route GET /api/images/smart-feed
+ * @access Private
+ */
+export const getSmartFeedImages = asyncHandler(async (req, res) => {
+  const { page, limit, category } = req.query;
+
+  const result = await getSmartFeed(req.user._id, {
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 20,
+    category
+  });
+
+  if (!result.success) {
+    throw new ApiError(500, result.error || "Failed to get smart feed");
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Smart feed fetched", result.images, result.metadata)
+  );
+});
+
+/**
+ * @desc Get "For You" recommendations
+ * @route GET /api/images/for-you
+ * @access Private
+ */
+export const getForYouImages = asyncHandler(async (req, res) => {
+  const { limit } = req.query;
+
+  const result = await getForYouRecommendations(req.user._id, parseInt(limit) || 10);
+
+  if (!result.success) {
+    throw new ApiError(500, result.error || "Failed to get recommendations");
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "Recommendations fetched", {
+      images: result.recommendations,
+      reason: result.reason
+    })
+  );
+});
+
+/**
+ * @desc Like a story (sends notification to story owner)
+ * @route POST /api/images/:imageId/story-like
+ * @access Private
+ */
+export const storyLike = asyncHandler(async (req, res) => {
+  const { imageId } = req.params;
+  const senderId = req.user._id;
+
+  const image = await Image.findById(imageId).populate('user', 'username profilePicture fullName');
+  if (!image) {
+    throw new ApiError(404, "Story not found");
+  }
+
+  // Toggle the like in the database
+  const result = await Like.toggleLike(senderId, imageId);
+
+  // Only notify on like (not unlike), and don't notify yourself
+  if (result.liked && image.user._id.toString() !== senderId.toString()) {
+    await Notification.createNotification({
+      recipient: image.user._id,
+      sender: senderId,
+      type: 'story_like',
+      content: 'liked your story',
+      relatedImage: imageId,
+    });
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, result.liked ? "Story liked" : "Story unliked", { liked: result.liked })
+  );
+});
+
+/**
+ * @desc Reply to a story (sends as DM + notification, like Instagram)
+ * @route POST /api/images/:imageId/story-reply
+ * @access Private
+ */
+export const storyReply = asyncHandler(async (req, res) => {
+  const { imageId } = req.params;
+  const { message } = req.body;
+  const senderId = req.user._id;
+
+  if (!message || !message.trim()) {
+    throw new ApiError(400, "Reply message is required");
+  }
+
+  const image = await Image.findById(imageId).populate('user', 'username profilePicture fullName');
+  if (!image) {
+    throw new ApiError(404, "Story not found");
+  }
+
+  const storyOwnerId = image.user._id;
+
+  if (storyOwnerId.toString() === senderId.toString()) {
+    throw new ApiError(400, "Cannot reply to your own story");
+  }
+
+  // Get or create conversation between sender and story owner
+  const conversation = await Conversation.findOrCreateConversation(senderId, storyOwnerId);
+
+  // Create the message as a story reply with reference to the story image
+  const newMessage = await Message.create({
+    conversation: conversation._id,
+    sender: senderId,
+    content: message.trim(),
+    messageType: 'storyReply',
+    sharedImage: imageId,
+    imageUrl: image.imageUrl, // Include story image URL for display
+  });
+
+  // Update conversation
+  conversation.lastMessage = newMessage._id;
+  conversation.lastMessageAt = new Date();
+  await conversation.save();
+
+  // Increment unread count for story owner
+  await conversation.incrementUnread(storyOwnerId);
+
+  // Populate sender info
+  await newMessage.populate('sender', 'fullName username profilePicture');
+  await newMessage.populate('sharedImage', 'title imageUrl');
+
+  // Create notification
+  await Notification.createNotification({
+    recipient: storyOwnerId,
+    sender: senderId,
+    type: 'story_reply',
+    content: `replied to your story: "${message.trim().substring(0, 50)}"`,
+    relatedImage: imageId,
+    relatedConversation: conversation._id,
+  });
+
+  res.status(201).json(
+    new ApiResponse(201, "Story reply sent", newMessage)
   );
 });

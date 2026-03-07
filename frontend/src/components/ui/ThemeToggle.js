@@ -5,7 +5,7 @@ import { Sun, Moon, Monitor } from 'lucide-react';
 
 // Animated Sun/Moon Toggle - Premium Version
 export const ThemeToggle = ({ size = 'default', showLabel = false, className = '' }) => {
-  const { theme, toggleTheme, isTransitioning } = useTheme();
+  const { theme, toggleTheme, isTransitioning, mounted } = useTheme();
   const isDark = theme === 'dark';
 
   const sizeClasses = {
@@ -19,6 +19,31 @@ export const ThemeToggle = ({ size = 'default', showLabel = false, className = '
     default: 'w-5 h-5',
     large: 'w-6 h-6',
   };
+
+  // Prevent hydration mismatch by showing skeleton until mounted
+  if (!mounted) {
+    return (
+      <div
+        className={`
+          relative group flex items-center gap-3
+          ${className}
+        `}
+      >
+        <div
+          className={`
+            ${sizeClasses[size]}
+            relative rounded-xl
+            bg-secondary
+            border border-border
+            animate-pulse
+          `}
+        />
+        {showLabel && (
+          <span className="text-sm font-medium text-foreground-secondary opacity-50">...</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <button
@@ -94,8 +119,22 @@ export const ThemeToggle = ({ size = 'default', showLabel = false, className = '
 
 // Switch Style Toggle - For Settings Page
 export const ThemeSwitch = ({ className = '' }) => {
-  const { theme, toggleTheme, isTransitioning } = useTheme();
+  const { theme, toggleTheme, isTransitioning, mounted } = useTheme();
   const isDark = theme === 'dark';
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div
+        className={`
+          relative w-16 h-8 rounded-full
+          bg-secondary border border-border
+          animate-pulse
+          ${className}
+        `}
+      />
+    );
+  }
 
   return (
     <button
@@ -138,12 +177,26 @@ export const ThemeSwitch = ({ className = '' }) => {
 
 // Segmented Control - For Navbar/Header
 export const ThemeSegmented = ({ className = '' }) => {
-  const { theme, setTheme, isTransitioning } = useTheme();
+  const { theme, setTheme, isTransitioning, mounted } = useTheme();
 
   const options = [
     { value: 'light', icon: Sun, label: 'Light' },
     { value: 'dark', icon: Moon, label: 'Dark' },
   ];
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div
+        className={`
+          inline-flex p-1 rounded-xl
+          bg-secondary border border-border
+          w-32 h-10 animate-pulse
+          ${className}
+        `}
+      />
+    );
+  }
 
   return (
     <div
@@ -179,8 +232,22 @@ export const ThemeSegmented = ({ className = '' }) => {
 
 // Floating Theme Toggle - Fixed Position
 export const ThemeToggleFloat = () => {
-  const { theme, toggleTheme, isTransitioning } = useTheme();
+  const { theme, toggleTheme, isTransitioning, mounted } = useTheme();
   const isDark = theme === 'dark';
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div
+        className="
+          fixed bottom-6 left-6 z-50
+          w-12 h-12 rounded-full
+          bg-card border border-border
+          shadow-lg animate-pulse
+        "
+      />
+    );
+  }
 
   return (
     <button

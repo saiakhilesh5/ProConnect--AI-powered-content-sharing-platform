@@ -382,6 +382,7 @@ const ImageDetail = () => {
             {image.commentsAllowed ? <CommentsSection
             imageId={imageId}
             user={user}
+            imageOwnerId={image?.user?._id}
           /> : (
             <div className="bg-card border border-border rounded-lg px-4 sm:px-6 py-8 sm:py-10 text-center my-4">
               <MessageSquareOff className="w-6 h-6 text-muted-foreground mx-auto mb-2" />

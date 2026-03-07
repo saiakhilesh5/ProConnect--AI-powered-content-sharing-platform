@@ -164,7 +164,7 @@ export default function RegisterForm() {
 
       if (success) {
         toast.success("Registration successful!");
-        router.push("/dashboard"); // Redirect to dashboard page
+        router.push("/feed"); // Redirect to feed page
       } else {
         toast.error(error || "Registration failed. Please try again.");
       }

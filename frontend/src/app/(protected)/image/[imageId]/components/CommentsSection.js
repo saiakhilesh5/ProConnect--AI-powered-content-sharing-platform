@@ -1,8 +1,87 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ThumbsUp, MoreHorizontal, Reply, Edit, Trash2, X, Check, Loader2, AlertTriangle, Shield } from 'lucide-react';
+import { ThumbsUp, MoreHorizontal, Reply, Edit, Trash2, X, Check, Loader2, AlertTriangle, Shield, Sparkles, Wand2 } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+
+// AI Reply Suggestions Component
+const ReplySuggestions = ({ commentId, onSelectSuggestion, isVisible }) => {
+  const api = useApi();
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [sentiment, setSentiment] = useState(null);
+
+  const fetchSuggestions = async () => {
+    if (!commentId || loading) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await api.get(`/api/comments/${commentId}/suggestions`);
+      const data = response.data.data;
+      setSuggestions(data.suggestions || []);
+      setSentiment(data.sentiment);
+    } catch (err) {
+      console.error('Failed to fetch suggestions:', err);
+      setError('Couldn\'t generate suggestions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="mt-3 mb-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Wand2 className="w-3.5 h-3.5 text-violet-400" />
+        <span className="text-xs text-gray-400">AI Suggestions</span>
+        {!suggestions.length && !loading && (
+          <button
+            onClick={fetchSuggestions}
+            className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
+          >
+            <Sparkles className="w-3 h-3" />
+            Generate
+          </button>
+        )}
+      </div>
+      
+      {loading && (
+        <div className="flex items-center gap-2 text-gray-400 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Generating smart replies...</span>
+        </div>
+      )}
+      
+      {error && (
+        <p className="text-xs text-red-400">{error}</p>
+      )}
+      
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              onClick={() => onSelectSuggestion(suggestion)}
+              className="px-3 py-1.5 text-xs bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 rounded-full border border-violet-500/30 transition-all duration-200 hover:scale-105"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {sentiment && suggestions.length > 0 && (
+        <p className="text-xs text-gray-500 mt-2">
+          Detected: {sentiment === 'positive' ? '😊 Positive' : sentiment === 'neutral' ? '😐 Neutral' : '💭 General'} comment
+        </p>
+      )}
+    </div>
+  );
+};
 
 const CommentActions = ({ 
   comment, 
@@ -95,7 +174,8 @@ const CommentActions = ({
 const CommentItem = ({ 
   comment, 
   user, 
-  imageId, 
+  imageId,
+  imageOwnerId,
   onReplySubmit, 
   onCommentDeleted, 
   onCommentUpdated, 
@@ -388,6 +468,16 @@ const CommentItem = ({
                   onChange={(e) => setReplyText(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg p-3 min-h-[60px] focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-white placeholder-gray-400 text-sm"
                 />
+                
+                {/* AI Reply Suggestions - only for image owner */}
+                {user && imageOwnerId && user._id === imageOwnerId && (
+                  <ReplySuggestions 
+                    commentId={comment._id}
+                    onSelectSuggestion={(suggestion) => setReplyText(suggestion)}
+                    isVisible={true}
+                  />
+                )}
+                
                 <div className="flex gap-2 mt-2">
                   <button 
                     onClick={handleSubmitReply}
@@ -417,6 +507,7 @@ const CommentItem = ({
               comment={reply} 
               user={user} 
               imageId={imageId}
+              imageOwnerId={imageOwnerId}
               onReplySubmit={onReplySubmit}
               onCommentDeleted={onCommentDeleted}
               onCommentUpdated={(updatedComment) => {
@@ -436,7 +527,8 @@ const CommentItem = ({
 
 const CommentsSection = ({ 
   imageId,
-  user
+  user,
+  imageOwnerId
 }) => {
   const api = useApi();
   const [comments, setComments] = useState([]);
@@ -742,6 +834,7 @@ const CommentsSection = ({
                 comment={comment} 
                 user={user} 
                 imageId={imageId}
+                imageOwnerId={imageOwnerId}
                 onReplySubmit={handleReplySubmit}
                 onCommentDeleted={handleCommentDeleted}
                 onCommentUpdated={handleCommentUpdated}

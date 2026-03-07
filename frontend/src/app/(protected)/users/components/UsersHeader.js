@@ -15,14 +15,15 @@ const UsersHeader = ({ searchQuery, setSearchQuery, filterOpen, setFilterOpen })
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-zinc-800/50 border border-white/10 w-full md:w-60 focus-within:ring-1 focus-within:ring-violet-500 transition">
+            <Search className="text-muted-foreground w-4 h-4 flex-shrink-0" />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Find users..." 
-              className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 pl-10 pr-4 w-full md:w-60 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+              className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+              style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
             />
           </div>
           
