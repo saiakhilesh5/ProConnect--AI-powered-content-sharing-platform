@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@netlify/plugin-nextjs": "^5.15.9",
     "@tailwindcss/postcss": "^4",
     "docx": "^9.5.1",
     "eslint": "^9",
