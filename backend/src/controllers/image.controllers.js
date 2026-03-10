@@ -1294,7 +1294,14 @@ export const aiChat = asyncHandler(async (req, res) => {
   const result = await chatWithAssistant(userId, message, imageId);
 
   if (!result.success) {
-    throw new ApiError(500, result.message);
+    // Return the AI error message as a chat reply so the frontend displays it gracefully
+    return res.status(200).json(
+      new ApiResponse(200, "AI response generated", {
+        reply: result.message,
+        images: [],
+        context: { hasUserData: false, hasImageData: false, hasTrendingData: false }
+      })
+    );
   }
 
   res.status(200).json(

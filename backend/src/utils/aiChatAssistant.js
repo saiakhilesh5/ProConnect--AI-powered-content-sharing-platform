@@ -313,7 +313,13 @@ Current date: ${new Date().toLocaleDateString()}`;
       }
     };
   } catch (error) {
-    console.error('AI Chat error:', error);
+    console.error('AI Chat error:', error?.status, error?.message);
+    if (error?.status === 403) {
+      return {
+        success: false,
+        message: "AI service quota exceeded or billing issue. Please contact the administrator."
+      };
+    }
     return {
       success: false,
       message: "Sorry, I'm having trouble right now. Please try again later."
