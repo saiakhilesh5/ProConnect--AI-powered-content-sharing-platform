@@ -316,32 +316,8 @@ export default function UploadReelPage() {
 
     setAiLoading(true);
     try {
-      // For AI analysis, we need to temporarily upload the video or use a preview
-      // Since the video isn't uploaded yet, we'll create a thumbnail and analyze it
-      if (!canvasRef.current || !videoPreviewRef.current) {
-        throw new Error("Video not ready");
-      }
-
-      // Create a thumbnail for analysis
-      const video = videoPreviewRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth || 720;
-      canvas.height = video.videoHeight || 1280;
-      
-      const ctx = canvas.getContext("2d");
-      video.currentTime = Math.min(2, videoDuration / 2);
-      
-      // Wait for seek
-      await new Promise((resolve) => {
-        video.onseeked = resolve;
-        setTimeout(resolve, 500); // Fallback timeout
-      });
-      
-      ctx.drawImage(video, 0, 0);
-      const thumbnailDataUrl = canvas.toDataURL("image/jpeg", 0.8);
-
-      // Since we can't upload before getting suggestions, we'll use a simulated analysis
-      // In production, you'd have an endpoint that accepts base64 images
+      // Since the video isn't uploaded to Cloudinary yet, use mock AI suggestions
+      // (a real implementation would upload the video first, then call /api/reels/analyze)
       toast.loading("AI is analyzing your reel...", { id: "ai-analysis" });
 
       // Simulate AI analysis (in prod, this would call the backend with the thumbnail)

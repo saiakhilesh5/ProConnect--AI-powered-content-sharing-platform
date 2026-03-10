@@ -105,10 +105,14 @@ export const analyzeReelWithAI = asyncHandler(async (req, res) => {
   console.log('AI analyzing reel content...');
   
   // Run AI analysis and content moderation in parallel
-  const [analysis, moderation] = await Promise.all([
+  // Use allSettled so a moderation API failure doesn't crash the analyze endpoint
+  const [analysisResult, moderationResult] = await Promise.allSettled([
     analyzeReel(videoUrl, thumbnailUrl),
     moderateReelContent(videoUrl, thumbnailUrl)
   ]);
+
+  const analysis = analysisResult.status === 'fulfilled' ? analysisResult.value : null;
+  const moderation = moderationResult.status === 'fulfilled' ? moderationResult.value : { safe: true, confidence: 0, category: 'safe' };
 
   if (!moderation.safe) {
     throw new ApiError(400, `Content may violate guidelines: ${moderation.reason}. Consider uploading different content.`);

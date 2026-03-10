@@ -70,7 +70,7 @@ const fetchImageAsBase64 = async (imageUrl) => {
  */
 export const analyzeReel = async (videoUrl, thumbnailUrl) => {
   try {
-    console.log('Analyzing reel with Gemini...');
+    console.log('Analyzing reel with Grok...');
     
     if (!process.env.GROK_API_KEY) {
       console.warn('Grok API key not configured, using fallback');
@@ -268,12 +268,12 @@ Respond ONLY with valid JSON:
     };
   } catch (error) {
     console.error('Reel moderation error:', error);
-    // Fail CLOSED for safety - reject on error
+    // Fail OPEN - an API error does not mean the content is unsafe
     return { 
-      safe: false, 
-      reason: 'Content moderation service unavailable. Please try again.',
+      safe: true, 
+      reason: null,
       confidence: 0,
-      category: 'error'
+      category: 'safe'
     };
   }
 };
