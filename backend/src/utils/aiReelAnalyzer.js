@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import cloudinary from '../config/cloudinary.js';
 
 // Valid categories for reels
@@ -70,15 +70,12 @@ const fetchImageAsBase64 = async (imageUrl) => {
  */
 export const analyzeReel = async (videoUrl, thumbnailUrl) => {
   try {
-    console.log('Analyzing reel with Grok...');
+    console.log('Analyzing reel with AI...');
     
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, using fallback');
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured, using fallback');
       return getFallbackAnalysis();
     }
-
-    // Initialize Grok (OpenAI-compatible)
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Use thumbnail for analysis (faster than extracting frames)
     let imageBase64;
@@ -113,8 +110,8 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
   "musicMood": "upbeat pop / chill lofi / dramatic / etc"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{
         role: 'user',
         content: [
@@ -126,7 +123,7 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
 
     const content = completion.choices[0].message.content;
     
-    console.log('Grok reel analysis raw:', content);
+    console.log('AI reel analysis raw:', content);
 
     if (!content) {
       return getFallbackAnalysis();
@@ -165,12 +162,10 @@ export const moderateReelContent = async (videoUrl, thumbnailUrl) => {
   try {
     console.log('Moderating reel content...');
     
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, skipping moderation');
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured, skipping moderation');
       return { safe: true, reason: null, confidence: 0 };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Extract multiple frames for thorough analysis
     let imagesToAnalyze = [];
@@ -243,8 +238,8 @@ Respond ONLY with valid JSON:
       contentParts.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imgBase64}` } });
     }
 
-    const modCompletion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const modCompletion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: contentParts }]
     });
     const content = modCompletion.choices[0].message.content;

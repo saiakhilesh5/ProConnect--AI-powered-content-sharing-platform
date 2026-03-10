@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 import { User } from '../models/user.model.js';
 import { Like } from '../models/like.model.js';
@@ -285,10 +285,8 @@ export const getGrowthRecommendations = async (userId) => {
 
     // Generate AI insights if available
     let aiInsights = null;
-    if (process.env.GROK_API_KEY && postingPatterns) {
+    if (hasAIKeys() && postingPatterns) {
       try {
-        const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
-
         const prompt = `Analyze this creator's data and provide 3 specific, actionable growth tips.
 
 Creator Stats:
@@ -307,8 +305,8 @@ Trending on platform:
 Provide 3 concise, specific tips (one sentence each). Format as JSON:
 {"tips": ["tip1", "tip2", "tip3"]}`;
 
-        const completion = await openai.chat.completions.create({
-          model: 'grok-2-1212',
+        const completion = await createChatCompletion({
+          model: 'gemini-2.5-flash',
           messages: [{ role: 'user', content: prompt }]
         });
         const content = completion.choices[0].message.content;

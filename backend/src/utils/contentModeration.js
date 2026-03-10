@@ -5,7 +5,7 @@
  * Includes smart filter for transliterated profanity with fuzzy matching
  */
 
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 
 // Base bad words (will be matched with fuzzy logic)
 const BAD_WORDS_BASE = [
@@ -143,8 +143,8 @@ export const moderateComment = async (text) => {
       };
     }
 
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, skipping moderation');
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured, skipping moderation');
       return { safe: true, scores: {}, reason: null };
     }
 
@@ -152,7 +152,6 @@ export const moderateComment = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const genAI = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
     const prompt = `You are a content moderation AI. Analyze this text for harmful content.
 
 TEXT: "${text}"
@@ -172,8 +171,8 @@ Detect profanity in ALL languages including transliterated forms and leetspeak.
 Respond ONLY with valid JSON (no markdown):
 {"safe":true,"scores":{"TOXICITY":0.0,"SEVERE_TOXICITY":0.0,"IDENTITY_ATTACK":0.0,"INSULT":0.0,"PROFANITY":0.0,"THREAT":0.0,"SEXUALLY_EXPLICIT":0.0,"SPAM":0.0},"reason":null}`;
 
-    const completion = await genAI.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;
@@ -236,12 +235,10 @@ const getReasonMessage = (attribute) => {
  */
 export const moderateImage = async (imageUrl) => {
   try {
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, skipping image moderation');
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured, skipping image moderation');
       return { safe: true, reason: null };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Fetch image as base64
     const response = await fetch(imageUrl);
@@ -260,8 +257,8 @@ Respond ONLY with valid JSON (no markdown):
 
 Be strict about nudity and explicit content. Artistic nudity should still be flagged.`;
 
-    const imageCompletion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const imageCompletion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{
         role: 'user',
         content: [

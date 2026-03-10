@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 
 /**
  * Advanced Multilingual Content Moderation
@@ -321,17 +321,15 @@ export const moderateText = async (text) => {
       };
     }
 
-    // Second: Grok AI analysis for complex cases
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured');
+    // Second: AI analysis for complex cases
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured');
       return { safe: true, scores: {}, reason: null, method: 'fallback' };
     }
 
     if (!text || text.trim().length === 0) {
       return { safe: true, scores: {}, reason: null };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `You are an advanced content moderation AI. Analyze this text for harmful content.
 
@@ -373,13 +371,13 @@ Respond ONLY with valid JSON:
   "language_detected": "language of the text"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;
     
-    console.log('Grok moderation raw:', content);
+    console.log('AI moderation raw:', content);
 
     // Parse response
     let jsonStr = content;

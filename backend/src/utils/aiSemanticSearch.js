@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 
 /**
@@ -14,11 +14,9 @@ import { Image } from '../models/image.model.js';
  */
 const parseNaturalLanguageQuery = async (query) => {
   try {
-    if (!process.env.GROK_API_KEY) {
+    if (!hasAIKeys()) {
       return { keywords: query.split(' '), category: null, mood: null, style: null };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `Analyze this image search query and extract search parameters.
 Query: "${query}"
@@ -36,8 +34,8 @@ Respond ONLY with valid JSON (no markdown):
   "subject": "person/animal/nature/architecture/object or null"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;
@@ -216,11 +214,9 @@ export const semanticSearch = async (query, options = {}) => {
  */
 export const findSimilarImages = async (imageUrl, limit = 10) => {
   try {
-    if (!process.env.GROK_API_KEY) {
+    if (!hasAIKeys()) {
       return { success: false, results: [], error: 'AI not configured' };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Analyze the reference image
     const response = await fetch(imageUrl);
@@ -238,8 +234,8 @@ Respond ONLY with valid JSON (no markdown):
   "colors": ["dominant_color1", "dominant_color2"]
 }`;
 
-    const simCompletion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const simCompletion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{
         role: 'user',
         content: [

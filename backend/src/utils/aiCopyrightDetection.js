@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 import crypto from 'crypto';
 
@@ -60,11 +60,9 @@ const fetchImageAsBase64 = async (imageUrl) => {
  */
 const analyzeImageSimilarityWithAI = async (imageUrl, existingImageUrls) => {
   try {
-    if (!process.env.GROK_API_KEY || existingImageUrls.length === 0) {
+    if (!hasAIKeys() || existingImageUrls.length === 0) {
       return { hasSimilar: false, matches: [] };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Fetch uploaded image
     const uploadedImageBuffer = await fetchImageAsBase64(imageUrl);
@@ -90,8 +88,8 @@ Analyze if Image 2 could be:
 Respond ONLY with valid JSON (no markdown):
 {"isSimilar": true/false, "similarityScore": 0-100, "reason": "brief explanation"}`;
 
-        const completion = await openai.chat.completions.create({
-          model: 'grok-2-vision-1212',
+        const completion = await createChatCompletion({
+          model: 'gemini-2.5-flash',
           messages: [{
             role: 'user',
             content: [

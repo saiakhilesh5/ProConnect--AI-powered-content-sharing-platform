@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 import { User } from '../models/user.model.js';
 import { Like } from '../models/like.model.js';
@@ -227,14 +227,12 @@ const getPlatformStats = async (startDate, endDate) => {
  */
 const generateAIInsights = async (stats, period) => {
   try {
-    if (!process.env.GROK_API_KEY) {
+    if (!hasAIKeys()) {
       return {
         success: false,
-        insights: "AI insights not available. GROK_API_KEY not configured."
+        insights: "AI insights not available. API keys not configured."
       };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `You are an analytics expert for ProConnect, a professional networking platform. Analyze the following platform statistics and generate a comprehensive report with actionable insights.
 
@@ -285,8 +283,8 @@ Generate a detailed report with the following sections. Use markdown formatting:
 
 Keep the report concise but insightful. Use emojis sparingly for visual appeal. Include specific numbers from the data.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const insights = completion.choices[0].message.content;

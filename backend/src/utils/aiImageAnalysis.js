@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 
 // Available categories in the app
 const VALID_CATEGORIES = ['abstract', 'portrait', 'landscape', 'cyberpunk', 'minimal', 'other'];
@@ -25,18 +25,15 @@ const fetchImageAsBase64 = async (imageUrl) => {
  */
 export const analyzeImage = async (imageUrl) => {
   try {
-    console.log('Grok API Key present:', !!process.env.GROK_API_KEY);
+    console.log('AI API Keys present:', hasAIKeys());
     
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, using fallback');
+    if (!hasAIKeys()) {
+      console.warn('AI API keys not configured, using fallback');
       return getFallbackAnalysis();
     }
 
-    console.log('Calling Grok Vision API for image:', imageUrl);
+    console.log('Calling Gemini Vision API for image:', imageUrl);
     
-    // Initialize Grok (OpenAI-compatible)
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
-
     const prompt = `You are an expert image analyst for a creative image sharing platform. Analyze this image and provide:
 1. A short, catchy title (max 50 characters, ONE LINE ONLY, no periods)
 2. A detailed description (2-3 sentences, max 300 characters)
@@ -50,8 +47,8 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
     // Fetch image and convert to base64
     const imageBase64 = await fetchImageAsBase64(imageUrl);
     
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{
         role: 'user',
         content: [

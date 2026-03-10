@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 import { Comment } from '../models/comment.model.js';
 import { User } from '../models/user.model.js';
@@ -188,18 +188,15 @@ export const generateReplySuggestions = async (commentId, userId) => {
     // Get user's reply style
     const replyStyle = await getUserReplyStyle(userId);
     
-    // Check if Grok API is available
-    if (!process.env.GROK_API_KEY) {
-      console.warn('Grok API key not configured, using fallback suggestions');
+    // Check if AI is available
+    if (!hasAIKeys()) {
+      console.warn('AI keys not configured, using fallback suggestions');
       return {
         suggestions: getFallbackSuggestions(commentText, sentiment),
         sentiment: sentiment.sentiment,
         isQuestion: sentiment.isQuestion
       };
     }
-    
-    // Initialize Grok (OpenAI-compatible)
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
     
     const prompt = `You are helping a content creator reply to a comment on their ${imageContext.category} image titled "${imageContext.title}".
 
@@ -227,8 +224,8 @@ Respond ONLY with valid JSON (no markdown):
   "isQuestion": ${sentiment.isQuestion}
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;

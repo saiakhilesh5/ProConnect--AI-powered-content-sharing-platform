@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createChatCompletion, hasAIKeys } from './aiClient.js';
 import { Image } from '../models/image.model.js';
 import { User } from '../models/user.model.js';
 import { Like } from '../models/like.model.js';
@@ -239,7 +239,7 @@ const extractSearchTopic = (message) => {
 
 export const chatWithAssistant = async (userId, message, imageId = null) => {
   try {
-    if (!process.env.GROK_API_KEY) {
+    if (!hasAIKeys()) {
       return {
         success: false,
         message: "AI Assistant is not configured. Please contact support."
@@ -287,12 +287,9 @@ ${trendingContext ? JSON.stringify(trendingContext, null, 2) : 'No trending data
 
 Current date: ${new Date().toLocaleDateString()}`;
 
-    // Initialize Grok (OpenAI-compatible)
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
-
     // Send message with system context
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
@@ -332,11 +329,9 @@ Current date: ${new Date().toLocaleDateString()}`;
  */
 export const suggestCaptions = async (imageUrl, category = 'other') => {
   try {
-    if (!process.env.GROK_API_KEY) {
+    if (!hasAIKeys()) {
       return { success: false, captions: [] };
     }
-
-    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Fetch image as base64
     const response = await fetch(imageUrl);
@@ -355,8 +350,8 @@ Make captions:
 - Include relevant emojis
 - 50-100 characters each`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'grok-2-vision-1212',
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
       messages: [{
         role: 'user',
         content: [
