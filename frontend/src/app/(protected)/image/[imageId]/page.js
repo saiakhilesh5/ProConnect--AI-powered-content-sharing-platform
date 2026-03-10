@@ -65,24 +65,26 @@ const ImageDetail = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await api.get(`/api/images/${imageId}`);
-        setImage(response.data.data);
-        setLikesCount(response.data.data.likesCount);
-        
-        // Fetch creator's other images
-        if (response.data.data.user?._id) {
-          const creatorImagesResponse = await api.get(`/api/images/user/${response.data.data.user._id}?limit=4`);
-          setRelatedImages(creatorImagesResponse.data.data);
+        const imageData = response.data.data;
+        setImage(imageData);
+        setLikesCount(imageData.likesCount);
+        setLoading(false); // Show image immediately — don't wait for related images
+
+        // Load creator's other images in background (non-blocking)
+        if (imageData.user?._id) {
+          api.get(`/api/images/user/${imageData.user._id}?limit=4`)
+            .then(r => setRelatedImages(r.data.data))
+            .catch(() => {});
         }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load image");
-        console.error("Error fetching image:", err);
-      } finally {
         setLoading(false);
+        console.error("Error fetching image:", err);
       }
     };
-    
+
     if (imageId) {
       fetchImageData();
     }
@@ -92,21 +94,20 @@ const ImageDetail = () => {
   useEffect(() => {
     const fetchStatuses = async () => {
       if (!user || !imageId || !image?.user?._id) return;
-      
+
       try {
-        // Follow status
-        if (user._id !== image.user._id) {
-          const followStatus = await checkFollowStatus(image.user._id);
-          setIsFollowing(followStatus);
-        }
+        // Run all three checks concurrently
+        const [likeStatus, bookmarkStatus, followStatus] = await Promise.all([
+          checkLikeStatus(imageId),
+          checkFavoriteStatus(imageId),
+          user._id !== image.user._id
+            ? checkFollowStatus(image.user._id)
+            : Promise.resolve(false),
+        ]);
 
-        // Like status
-        const likeStatus = await checkLikeStatus(imageId);
         setIsLiked(likeStatus);
-
-        // Bookmark status
-        const bookmarkStatus = await checkFavoriteStatus(imageId);
         setIsBookmarked(bookmarkStatus);
+        if (user._id !== image.user._id) setIsFollowing(followStatus);
       } catch (err) {
         console.error('Error fetching statuses:', err);
       }

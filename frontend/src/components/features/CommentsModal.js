@@ -202,6 +202,14 @@ const CommentsModal = ({
   const toxicityCheckTimer = useRef(null);
   const inputRef = useRef(null);
   const commentsRef = useRef(null);
+  const mentionRef = useRef(null);
+
+  // @mention state
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionUsers, setMentionUsers] = useState([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [inMention, setInMention] = useState(false);
 
   // Focus input when replying
   useEffect(() => {
@@ -256,6 +264,76 @@ const CommentsModal = ({
 
   const handleReply = (username) => {
     setReplyingTo(username);
+  };
+
+  // @mention search — fires even when query is empty (user just typed @)
+  useEffect(() => {
+    if (!inMention) {
+      setShowMentions(false);
+      setMentionUsers([]);
+      return;
+    }
+    const search = async () => {
+      try {
+        const res = await api.get(`/api/reels/mentions/search?query=${encodeURIComponent(mentionQuery)}`);
+        const users = res.data.data || [];
+        setMentionUsers(users);
+        setShowMentions(users.length > 0);
+        setMentionIndex(0);
+      } catch {
+        setShowMentions(false);
+      }
+    };
+    const timer = setTimeout(search, mentionQuery.length > 0 ? 200 : 0);
+    return () => clearTimeout(timer);
+  }, [mentionQuery, inMention, api]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setNewComment(value);
+    const lastAtIndex = value.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const afterAt = value.substring(lastAtIndex + 1);
+      if (!afterAt.includes(' ')) {
+        setMentionQuery(afterAt);
+        setInMention(true);
+      } else {
+        setMentionQuery('');
+        setInMention(false);
+      }
+    } else {
+      setMentionQuery('');
+      setInMention(false);
+    }
+  };
+
+  const insertMention = (mentionUser) => {
+    const lastAtIndex = newComment.lastIndexOf('@');
+    const newText = `${newComment.substring(0, lastAtIndex)}@${mentionUser.username} `;
+    setNewComment(newText);
+    setShowMentions(false);
+    setMentionQuery('');
+    setInMention(false);
+    inputRef.current?.focus();
+  };
+
+  const handleMentionKeyDown = (e) => {
+    if (!showMentions) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMentionIndex(prev => Math.min(prev + 1, mentionUsers.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMentionIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (mentionUsers[mentionIndex]) {
+        e.preventDefault();
+        insertMention(mentionUsers[mentionIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setShowMentions(false);
+      setInMention(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -362,7 +440,35 @@ const CommentsModal = ({
 
             {/* Comment Input */}
             {user && (
-              <div className="p-4 border-t border-border">
+              <div className="p-4 border-t border-border relative">
+                {/* @mention suggestions dropdown */}
+                {showMentions && mentionUsers.length > 0 && (
+                  <div
+                    ref={mentionRef}
+                    className="absolute bottom-full left-0 right-0 mx-4 mb-1 max-h-48 overflow-y-auto bg-popover rounded-lg border border-border shadow-xl z-10"
+                  >
+                    {mentionUsers.map((mu, idx) => (
+                      <button
+                        key={mu._id}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); insertMention(mu); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary transition-colors ${
+                          idx === mentionIndex ? 'bg-secondary' : ''
+                        }`}
+                      >
+                        <img
+                          src={mu.profilePicture || '/images/default-profile.jpg'}
+                          alt={mu.username}
+                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                        />
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-foreground">{mu.fullName || mu.username}</p>
+                          <p className="text-xs text-muted-foreground">@{mu.username}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {/* Real-time toxicity indicator */}
                 {newComment.trim().length >= 3 && (
                   <div className={`flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -411,7 +517,8 @@ const CommentsModal = ({
                       ref={inputRef}
                       type="text"
                       value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
+                      onChange={handleInputChange}
+                      onKeyDown={handleMentionKeyDown}
                       placeholder="Add a comment..."
                       className={`w-full bg-transparent text-sm text-foreground placeholder-muted-foreground focus:outline-none pr-8 ${
                         toxicityData.level === 'high' ? 'border-b border-red-500/50' : ''

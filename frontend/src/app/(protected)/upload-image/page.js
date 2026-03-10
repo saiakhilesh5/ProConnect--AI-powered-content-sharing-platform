@@ -346,7 +346,7 @@ const ImageUpload = () => {
 
       try {
         // Use fetch for saving details too
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API || 'http://localhost:5000'}/api/images/save-details`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API || 'http://localhost:8000'}/api/images/save-details`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

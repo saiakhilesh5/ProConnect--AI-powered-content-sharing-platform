@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useRef } from "react";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "./AuthContext";
 
@@ -14,193 +14,160 @@ export const LikesFavoritesProvider = ({ children }) => {
   const { user } = useAuth();
   const api = useApi();
 
-  // Store liked and favorited images
+  // Store liked and favorited images (state for reactive UI updates)
   const [likedImages, setLikedImages] = useState({});
   const [favoritedImages, setFavoritedImages] = useState({});
 
-  // Check if image is liked by user
+  // Ref-based caches so check callbacks don't depend on state
+  // and don't re-create on every status update (avoids cascade re-renders)
+  const likedCacheRef = useRef({});
+  const favoritedCacheRef = useRef({});
+
+  // Check if image is liked by user — uses ref cache, no loading state thrash
   const checkLikeStatus = useCallback(async (imageId) => {
-    // Don't check if user is not logged in
     if (!user) return false;
-    
+
+    // Serve from cache if already known
+    if (likedCacheRef.current[imageId] !== undefined) {
+      return likedCacheRef.current[imageId];
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Check if we already have this information in state
-      if (likedImages[imageId] !== undefined) {
-        return likedImages[imageId];
-      }
-      
-      // Otherwise fetch from API
       const response = await api.get(`/api/likes/${imageId}/check`);
       const isLiked = response.data.data.isLiked;
-      
-      // Update state
+      likedCacheRef.current[imageId] = isLiked;
       setLikedImages(prev => ({ ...prev, [imageId]: isLiked }));
-      
       return isLiked;
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || "Error checking like status";
-      setError(errorMessage);
+    } catch {
       return false;
-    } finally {
-      setLoading(false);
     }
-  }, [api, likedImages, user]);
+  }, [api, user]);
 
-  // Check if image is favorited by user
+  // Check if image is favorited by user — uses ref cache, no loading state thrash
   const checkFavoriteStatus = useCallback(async (imageId) => {
-    // Don't check if user is not logged in
     if (!user) return false;
-    
+
+    if (favoritedCacheRef.current[imageId] !== undefined) {
+      return favoritedCacheRef.current[imageId];
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Check if we already have this information in state
-      if (favoritedImages[imageId] !== undefined) {
-        return favoritedImages[imageId];
-      }
-      
-      // Otherwise fetch from API
       const response = await api.get(`/api/favorites/${imageId}/check`);
       const isFavorited = response.data.data.isFavorited;
-      
-      // Update state
+      favoritedCacheRef.current[imageId] = isFavorited;
       setFavoritedImages(prev => ({ ...prev, [imageId]: isFavorited }));
-      
       return isFavorited;
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || "Error checking favorite status";
-      setError(errorMessage);
+    } catch {
       return false;
-    } finally {
-      setLoading(false);
     }
-  }, [api, favoritedImages, user]);
+  }, [api, user]);
 
   // Toggle like status with optimistic UI updates
-  const toggleLike = useCallback(async (imageId, image) => {
+  const toggleLike = useCallback(async (imageId) => {
     if (!user) return { success: false, message: "You must be logged in" };
-    
+
+    const currentStatus = likedCacheRef.current[imageId] || false;
+    const newStatus = !currentStatus;
+
+    // Optimistically update both cache and state
+    likedCacheRef.current[imageId] = newStatus;
+    setLikedImages(prev => ({ ...prev, [imageId]: newStatus }));
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Get current status
-      const currentStatus = likedImages[imageId] || false;
-      const newStatus = !currentStatus;
-      
-      // Optimistically update UI
-      setLikedImages(prev => ({ ...prev, [imageId]: newStatus }));
-      
-      // Make the actual API call
       const response = await api.post(`/api/likes/${imageId}/toggle`);
-      
       return { success: true, data: response.data.data };
     } catch (err) {
-      // Revert optimistic update on error
-      const currentStatus = likedImages[imageId] || false;
-      setLikedImages(prev => ({ ...prev, [imageId]: !currentStatus }));
-      
+      // Revert on error
+      likedCacheRef.current[imageId] = currentStatus;
+      setLikedImages(prev => ({ ...prev, [imageId]: currentStatus }));
       const errorMessage = err.response?.data?.message || "Error toggling like";
       setError(errorMessage);
       return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
     }
-  }, [api, user, likedImages]);
+  }, [api, user]);
 
   // Toggle favorite status with optimistic UI updates
   const toggleFavorite = useCallback(async (imageId) => {
     if (!user) return { success: false, message: "You must be logged in" };
-    
+
+    const currentStatus = favoritedCacheRef.current[imageId] || false;
+    const newStatus = !currentStatus;
+
+    // Optimistically update both cache and state
+    favoritedCacheRef.current[imageId] = newStatus;
+    setFavoritedImages(prev => ({ ...prev, [imageId]: newStatus }));
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Get current status
-      const currentStatus = favoritedImages[imageId] || false;
-      const newStatus = !currentStatus;
-      
-      // Optimistically update UI
-      setFavoritedImages(prev => ({ ...prev, [imageId]: newStatus }));
-      
-      // Make the actual API call
       const response = await api.post(`/api/favorites/${imageId}/toggle`);
-      
       return { success: true, data: response.data.data };
     } catch (err) {
-      // Revert optimistic update on error
-      const currentStatus = favoritedImages[imageId] || false;
-      setFavoritedImages(prev => ({ ...prev, [imageId]: !currentStatus }));
-      
+      // Revert on error
+      favoritedCacheRef.current[imageId] = currentStatus;
+      setFavoritedImages(prev => ({ ...prev, [imageId]: currentStatus }));
       const errorMessage = err.response?.data?.message || "Error toggling favorite";
       setError(errorMessage);
       return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
     }
-  }, [api, user, favoritedImages]);
+  }, [api, user]);
 
   // Load user's likes
   const loadUserLikes = useCallback(async (page = 1, limit = 20) => {
     if (!user) return [];
-    
     try {
       setLoading(true);
       setError(null);
-      
       const response = await api.get(`/api/likes?page=${page}&limit=${limit}`);
       const likes = response.data.data;
-      
-      // Update liked images state
-      const newLikedImages = { ...likedImages };
       likes.forEach(like => {
-        newLikedImages[like.image._id] = true;
+        likedCacheRef.current[like.image._id] = true;
       });
-      
-      setLikedImages(newLikedImages);
-      
+      setLikedImages(prev => {
+        const next = { ...prev };
+        likes.forEach(like => { next[like.image._id] = true; });
+        return next;
+      });
       return likes;
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Error loading likes";
-      setError(errorMessage);
+      setError(err.response?.data?.message || "Error loading likes");
       return [];
     } finally {
       setLoading(false);
     }
-  }, [api, user, likedImages]);
+  }, [api, user]);
 
   // Load user's favorites
   const loadUserFavorites = useCallback(async (page = 1, limit = 20) => {
     if (!user) return [];
-    
     try {
       setLoading(true);
       setError(null);
-      
       const response = await api.get(`/api/favorites?page=${page}&limit=${limit}`);
       const favorites = response.data.data;
-      
-      // Update favorited images state
-      const newFavoritedImages = { ...favoritedImages };
-      favorites.forEach(favorite => {
-        newFavoritedImages[favorite.image._id] = true;
+      favorites.forEach(fav => {
+        favoritedCacheRef.current[fav.image._id] = true;
       });
-      
-      setFavoritedImages(newFavoritedImages);
-      
+      setFavoritedImages(prev => {
+        const next = { ...prev };
+        favorites.forEach(fav => { next[fav.image._id] = true; });
+        return next;
+      });
       return favorites;
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Error loading favorites";
-      setError(errorMessage);
+      setError(err.response?.data?.message || "Error loading favorites");
       return [];
     } finally {
       setLoading(false);
     }
-  }, [api, user, favoritedImages]);
+  }, [api, user]);
+
+  // Synchronous helpers for components that just want the cached value
+  const getLikeStatus = useCallback((imageId) => {
+    return likedCacheRef.current[imageId] ?? likedImages[imageId] ?? false;
+  }, [likedImages]);
+
+  const getFavoriteStatus = useCallback((imageId) => {
+    return favoritedCacheRef.current[imageId] ?? favoritedImages[imageId] ?? false;
+  }, [favoritedImages]);
 
   const value = {
     loading,
@@ -212,7 +179,9 @@ export const LikesFavoritesProvider = ({ children }) => {
     toggleLike,
     toggleFavorite,
     loadUserLikes,
-    loadUserFavorites
+    loadUserFavorites,
+    getLikeStatus,
+    getFavoriteStatus,
   };
 
   return <LikesFavoritesContext.Provider value={value}>{children}</LikesFavoritesContext.Provider>;

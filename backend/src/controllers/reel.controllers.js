@@ -873,24 +873,48 @@ export const deleteComment = asyncHandler(async (req, res) => {
  */
 export const searchUsersForMention = asyncHandler(async (req, res) => {
   const { query } = req.query;
-  
-  if (!query || query.length < 1) {
+  const currentUserId = req.user._id;
+
+  // Get people the current user follows — these are prioritised for @mentions
+  const followingDocs = await Follow.find({ follower: currentUserId })
+    .select('following')
+    .populate('following', '_id fullName username profilePicture isVerified');
+
+  const following = followingDocs.map(f => f.following).filter(Boolean);
+
+  if (!query || query.trim().length === 0) {
+    // No query — return all following (up to 10) so they show right after typing @
     return res.status(200).json(
-      new ApiResponse(200, "Users fetched", [])
+      new ApiResponse(200, "Users fetched for mention", following.slice(0, 10))
     );
   }
 
-  const users = await User.find({
+  // Filter following list by query
+  const q = query.toLowerCase();
+  const matchingFollowing = following.filter(
+    u => u.username?.toLowerCase().includes(q) || u.fullName?.toLowerCase().includes(q)
+  );
+
+  if (matchingFollowing.length >= 5) {
+    return res.status(200).json(
+      new ApiResponse(200, "Users fetched for mention", matchingFollowing.slice(0, 10))
+    );
+  }
+
+  // Supplement with general user search if not enough following matches
+  const followingIds = following.map(f => f._id);
+  const extraUsers = await User.find({
+    _id: { $nin: [...followingIds, currentUserId] },
     $or: [
       { username: { $regex: query, $options: 'i' } },
       { fullName: { $regex: query, $options: 'i' } },
     ],
   })
     .select('_id fullName username profilePicture isVerified')
-    .limit(10);
+    .limit(10 - matchingFollowing.length);
 
   res.status(200).json(
-    new ApiResponse(200, "Users fetched for mention", users)
+    new ApiResponse(200, "Users fetched for mention", [...matchingFollowing, ...extraUsers])
   );
 });
 

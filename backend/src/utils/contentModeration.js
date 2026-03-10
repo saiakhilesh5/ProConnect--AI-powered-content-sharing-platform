@@ -1,12 +1,11 @@
 /**
  * Content Moderation Utility
- * Uses Google Perspective API for text moderation
+ * Uses Gemini AI for text moderation
  * Uses image analysis for NSFW detection
  * Includes smart filter for transliterated profanity with fuzzy matching
  */
 
-// Perspective API for comment moderation
-const PERSPECTIVE_API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Base bad words (will be matched with fuzzy logic)
 const BAD_WORDS_BASE = [
@@ -144,8 +143,8 @@ export const moderateComment = async (text) => {
       };
     }
 
-    if (!process.env.PERSPECTIVE_API_KEY) {
-      console.warn('Perspective API key not configured, skipping moderation');
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn('Gemini API key not configured, skipping moderation');
       return { safe: true, scores: {}, reason: null };
     }
 
@@ -153,46 +152,36 @@ export const moderateComment = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const response = await fetch(`${PERSPECTIVE_API_URL}?key=${process.env.PERSPECTIVE_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        comment: { text },
-        // Don't specify language - let Perspective API auto-detect
-        // Supports 20+ languages: en, es, fr, de, pt, it, hi, ar, ru, zh, ja, ko, etc.
-        requestedAttributes: {
-          TOXICITY: {},
-          SEVERE_TOXICITY: {},
-          IDENTITY_ATTACK: {},
-          INSULT: {},
-          PROFANITY: {},
-          THREAT: {},
-          SEXUALLY_EXPLICIT: {},
-          SPAM: {}
-        },
-        doNotStore: true // Privacy: don't store comments on Google servers
-      })
-    });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Perspective API error:', error);
-      return { safe: true, scores: {}, reason: null }; // Fail open - allow if API fails
-    }
+    const prompt = `You are a content moderation AI. Analyze this text for harmful content.
 
-    const data = await response.json();
-    const scores = {};
-    
-    // Extract scores
-    for (const [attr, value] of Object.entries(data.attributeScores || {})) {
-      scores[attr] = value.summaryScore?.value || 0;
-    }
+TEXT: "${text}"
 
-    console.log('Content moderation scores:', scores);
+Score each category from 0.0 to 1.0:
+- TOXICITY: rude/disrespectful content
+- SEVERE_TOXICITY: extremely hateful content
+- IDENTITY_ATTACK: attacks based on race, religion, gender, nationality
+- INSULT: personal attacks or name-calling
+- PROFANITY: obscene language in any language (including transliterated)
+- THREAT: threats of violence or harm
+- SEXUALLY_EXPLICIT: sexual content or innuendo
+- SPAM: unsolicited promotional content
 
-    // Define thresholds (0-1 scale)
+Detect profanity in ALL languages including transliterated forms and leetspeak.
+
+Respond ONLY with valid JSON (no markdown):
+{"safe":true,"scores":{"TOXICITY":0.0,"SEVERE_TOXICITY":0.0,"IDENTITY_ATTACK":0.0,"INSULT":0.0,"PROFANITY":0.0,"THREAT":0.0,"SEXUALLY_EXPLICIT":0.0,"SPAM":0.0},"reason":null}`;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const data = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+
+    const scores = data.scores || {};
+    console.log('Gemini moderation scores:', scores);
+
     const THRESHOLDS = {
       TOXICITY: 0.7,
       SEVERE_TOXICITY: 0.5,
@@ -204,7 +193,6 @@ export const moderateComment = async (text) => {
       SPAM: 0.8
     };
 
-    // Check if any score exceeds threshold
     let reason = null;
     let safe = true;
 
@@ -216,7 +204,7 @@ export const moderateComment = async (text) => {
       }
     }
 
-    return { safe, scores, reason };
+    return { safe: safe && data.safe !== false, scores, reason };
   } catch (error) {
     console.error('Content moderation error:', error);
     return { safe: true, scores: {}, reason: null }; // Fail open

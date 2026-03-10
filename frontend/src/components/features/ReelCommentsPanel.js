@@ -61,6 +61,7 @@ export default function ReelCommentsPanel({
   const [mentionUsers, setMentionUsers] = useState([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [inMention, setInMention] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -87,22 +88,22 @@ export default function ReelCommentsPanel({
     }
   }, [replyingTo]);
 
-  // Handle @mention search
+  // Handle @mention search — triggers even when query is empty (just typed @)
   useEffect(() => {
-    if (mentionQuery.length > 0) {
-      const searchMentions = async () => {
-        const users = await searchUsersForMention(mentionQuery);
-        setMentionUsers(users);
-        setShowMentions(users.length > 0);
-        setMentionIndex(0);
-      };
-      const timer = setTimeout(searchMentions, 200);
-      return () => clearTimeout(timer);
-    } else {
+    if (!inMention) {
       setShowMentions(false);
       setMentionUsers([]);
+      return;
     }
-  }, [mentionQuery, searchUsersForMention]);
+    const searchMentions = async () => {
+      const users = await searchUsersForMention(mentionQuery);
+      setMentionUsers(users);
+      setShowMentions(users.length > 0);
+      setMentionIndex(0);
+    };
+    const timer = setTimeout(searchMentions, mentionQuery.length > 0 ? 200 : 0);
+    return () => clearTimeout(timer);
+  }, [mentionQuery, inMention, searchUsersForMention]);
 
   // Real-time toxicity check while typing
   useEffect(() => {
@@ -198,12 +199,16 @@ export default function ReelCommentsPanel({
       const afterAt = value.substring(lastAtIndex + 1);
       const spaceAfterAt = afterAt.indexOf(" ");
       if (spaceAfterAt === -1) {
+        // Actively inside a mention (query can be empty = just typed @)
         setMentionQuery(afterAt);
+        setInMention(true);
       } else {
         setMentionQuery("");
+        setInMention(false);
       }
     } else {
       setMentionQuery("");
+      setInMention(false);
     }
   };
 
@@ -214,6 +219,7 @@ export default function ReelCommentsPanel({
     setCommentText(newText);
     setShowMentions(false);
     setMentionQuery("");
+    setInMention(false);
     inputRef.current?.focus();
   };
 
@@ -234,6 +240,7 @@ export default function ReelCommentsPanel({
         }
       } else if (e.key === "Escape") {
         setShowMentions(false);
+        setInMention(false);
       }
     } else if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();

@@ -115,6 +115,11 @@ export const AuthProvider = ({ children }) => {
 
   // Verify user with API, but rate limit to prevent too many calls
   const verifyUser = useCallback(async (force = false) => {
+
+    // Never hit the backend when there is no NextAuth session
+    if (status === "unauthenticated") {
+      return;
+    }
     
     // Don't verify if we already have user data and session is valid, unless forced
     if (!force && user && session && status === "authenticated") {
@@ -173,17 +178,18 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize from cache and session
   useEffect(() => {
-    // Regardless of NextAuth status, verify backend user if not loaded yet
-    if (status !== "loading") {
-      if (!user) {
-        // Add a small delay to ensure any recent login cookies are available
-        const timer = setTimeout(() => {
-          verifyUser();
-        }, 500);
-        return () => clearTimeout(timer);
-      } else {
-        setLoading(false);
-      }
+    if (status === "loading") return;
+
+    // Don't attempt backend verification when NextAuth has no session
+    if (status === "unauthenticated") {
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      verifyUser();
+    } else {
+      setLoading(false);
     }
   }, [status, user, verifyUser]);
 

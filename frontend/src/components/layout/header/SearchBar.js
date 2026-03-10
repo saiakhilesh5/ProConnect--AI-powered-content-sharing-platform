@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, X, Clock, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const searchInputRef = useRef(null);
+  const debounceRef = useRef(null);
   const router = useRouter();
   const api = useApi();
 
@@ -60,19 +61,19 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
   };
 
   // Handle search suggestions
-  const handleSearchInput = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    
-    if (query.trim().length > 2) {
-      setLoading(true);
-      try {
-        // Get suggestions from multiple endpoints
-        const [imagesRes, usersRes, tagsRes] = await Promise.allSettled([
-          api.get(`/api/images/search?q=${query}&limit=3`),
-          api.get(`/api/users/search?query=${query}&limit=3`),
-          api.get(`/api/images/tags/search?query=${query}&limit=3`)
-        ]);
+  const fetchSuggestions = useCallback(async (query) => {
+    if (query.trim().length <= 2) {
+      setSuggestions([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const [imagesRes, usersRes, tagsRes] = await Promise.allSettled([
+        api.get(`/api/images/search?q=${query}&limit=3`),
+        api.get(`/api/users/search?query=${query}&limit=3`),
+        api.get(`/api/images/tags/search?query=${query}&limit=3`)
+      ]);
 
         const suggestions = [];
         
@@ -104,14 +105,18 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
         }
 
         setSuggestions(suggestions.slice(0, 6));
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setSuggestions([]);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    } finally {
+      setLoading(false);
     }
+  }, [api]);
+
+  const handleSearchInput = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(query), 300);
   };
 
   const handleSearchSubmit = (e) => {

@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import userRoutes from "./routes/user.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 import imageRoutes from "./routes/image.routes.js";
@@ -15,36 +18,62 @@ import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
-// Middleware setup
+// ─── Security headers (XSS, clickjacking, MIME sniffing, etc.) ────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false,
+}));
+
+// ─── Gzip/Brotli compression ─────────────────────────────────────────────────
+// Compresses all responses > 1 KB (~40-80% bandwidth reduction)
+app.use(compression({ threshold: 1024 }));
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000']; // Default for development
+  : ['http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Allow cookies & authentication headers
+  credentials: true,
 }));
 
+// ─── Global rate limiter (rush handling) ─────────────────────────────────────
+// 300 requests per IP per minute — protects against traffic spikes
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute window
+  max: 300,                  // max requests per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/',  // skip health check
+  message: {
+    success: false,
+    statusCode: 429,
+    message: "Too many requests. Please slow down.",
+  },
+});
+app.use(globalLimiter);
+
+// ─── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ limit: "16kb", extended: true }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// Default route to test if the server is running
+// ─── Health check ─────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   res.send("Server is running!");
 });
 
-// Register routes
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/users", userRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/images", imageRoutes);
@@ -57,11 +86,10 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/reels", reelRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Global error handler
+// ─── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
-  
   res.status(statusCode).json({
     success: false,
     statusCode,
@@ -71,7 +99,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// ─── 404 handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
