@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Image } from '../models/image.model.js';
 import { Comment } from '../models/comment.model.js';
 import { User } from '../models/user.model.js';
@@ -188,9 +188,9 @@ export const generateReplySuggestions = async (commentId, userId) => {
     // Get user's reply style
     const replyStyle = await getUserReplyStyle(userId);
     
-    // Check if Gemini API is available
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, using fallback suggestions');
+    // Check if Grok API is available
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, using fallback suggestions');
       return {
         suggestions: getFallbackSuggestions(commentText, sentiment),
         sentiment: sentiment.sentiment,
@@ -198,9 +198,8 @@ export const generateReplySuggestions = async (commentId, userId) => {
       };
     }
     
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Initialize Grok (OpenAI-compatible)
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
     
     const prompt = `You are helping a content creator reply to a comment on their ${imageContext.category} image titled "${imageContext.title}".
 
@@ -228,8 +227,11 @@ Respond ONLY with valid JSON (no markdown):
   "isQuestion": ${sentiment.isQuestion}
 }`;
 
-    const result = await model.generateContent(prompt);
-    const content = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-1212',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const content = completion.choices[0].message.content;
     
     // Parse response
     const jsonMatch = content.match(/\{[\s\S]*\}/);

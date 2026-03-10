@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import cloudinary from '../config/cloudinary.js';
 
 // Valid categories for reels
@@ -72,14 +72,13 @@ export const analyzeReel = async (videoUrl, thumbnailUrl) => {
   try {
     console.log('Analyzing reel with Gemini...');
     
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, using fallback');
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, using fallback');
       return getFallbackAnalysis();
     }
 
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Initialize Grok (OpenAI-compatible)
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Use thumbnail for analysis (faster than extracting frames)
     let imageBase64;
@@ -114,20 +113,20 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
   "musicMood": "upbeat pop / chill lofi / dramatic / etc"
 }`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: imageBase64
-        }
-      }
-    ]);
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+        ]
+      }]
+    });
 
-    const response = await result.response;
-    const content = response.text();
+    const content = completion.choices[0].message.content;
     
-    console.log('Gemini reel analysis raw:', content);
+    console.log('Grok reel analysis raw:', content);
 
     if (!content) {
       return getFallbackAnalysis();
@@ -166,13 +165,12 @@ export const moderateReelContent = async (videoUrl, thumbnailUrl) => {
   try {
     console.log('Moderating reel content...');
     
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, skipping moderation');
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, skipping moderation');
       return { safe: true, reason: null, confidence: 0 };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Extract multiple frames for thorough analysis
     let imagesToAnalyze = [];
@@ -240,19 +238,16 @@ Respond ONLY with valid JSON:
   "details": "brief description of what was detected"
 }`;
 
-    // Build content array with all images
-    const contentParts = [prompt];
+    const contentParts = [{ type: 'text', text: prompt }];
     for (const imgBase64 of imagesToAnalyze.slice(0, 4)) { // Max 4 frames
-      contentParts.push({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: imgBase64
-        }
-      });
+      contentParts.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imgBase64}` } });
     }
 
-    const result = await model.generateContent(contentParts);
-    const content = result.response.text();
+    const modCompletion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{ role: 'user', content: contentParts }]
+    });
+    const content = modCompletion.choices[0].message.content;
     
     console.log('Moderation result:', content);
 

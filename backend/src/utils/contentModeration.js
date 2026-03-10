@@ -5,7 +5,7 @@
  * Includes smart filter for transliterated profanity with fuzzy matching
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 // Base bad words (will be matched with fuzzy logic)
 const BAD_WORDS_BASE = [
@@ -143,8 +143,8 @@ export const moderateComment = async (text) => {
       };
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, skipping moderation');
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, skipping moderation');
       return { safe: true, scores: {}, reason: null };
     }
 
@@ -152,9 +152,7 @@ export const moderateComment = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+    const genAI = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
     const prompt = `You are a content moderation AI. Analyze this text for harmful content.
 
 TEXT: "${text}"
@@ -174,13 +172,16 @@ Detect profanity in ALL languages including transliterated forms and leetspeak.
 Respond ONLY with valid JSON (no markdown):
 {"safe":true,"scores":{"TOXICITY":0.0,"SEVERE_TOXICITY":0.0,"IDENTITY_ATTACK":0.0,"INSULT":0.0,"PROFANITY":0.0,"THREAT":0.0,"SEXUALLY_EXPLICIT":0.0,"SPAM":0.0},"reason":null}`;
 
-    const result = await model.generateContent(prompt);
-    const content = result.response.text();
+    const completion = await genAI.chat.completions.create({
+      model: 'grok-2-1212',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const content = completion.choices[0].message.content;
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     const data = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
     const scores = data.scores || {};
-    console.log('Gemini moderation scores:', scores);
+    console.log('Grok moderation scores:', scores);
 
     const THRESHOLDS = {
       TOXICITY: 0.7,
@@ -235,14 +236,12 @@ const getReasonMessage = (attribute) => {
  */
 export const moderateImage = async (imageUrl) => {
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, skipping image moderation');
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, skipping image moderation');
       return { safe: true, reason: null };
     }
 
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Fetch image as base64
     const response = await fetch(imageUrl);
@@ -261,17 +260,18 @@ Respond ONLY with valid JSON (no markdown):
 
 Be strict about nudity and explicit content. Artistic nudity should still be flagged.`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: imageBase64
-        }
-      }
-    ]);
+    const imageCompletion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+        ]
+      }]
+    });
 
-    const content = result.response.text();
+    const content = imageCompletion.choices[0].message.content;
     console.log('Image moderation response:', content);
 
     // Parse JSON response

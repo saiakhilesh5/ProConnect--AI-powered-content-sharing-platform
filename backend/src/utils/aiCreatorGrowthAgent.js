@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Image } from '../models/image.model.js';
 import { User } from '../models/user.model.js';
 import { Like } from '../models/like.model.js';
@@ -285,10 +285,9 @@ export const getGrowthRecommendations = async (userId) => {
 
     // Generate AI insights if available
     let aiInsights = null;
-    if (process.env.GEMINI_API_KEY && postingPatterns) {
+    if (process.env.GROK_API_KEY && postingPatterns) {
       try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
         const prompt = `Analyze this creator's data and provide 3 specific, actionable growth tips.
 
@@ -308,8 +307,11 @@ Trending on platform:
 Provide 3 concise, specific tips (one sentence each). Format as JSON:
 {"tips": ["tip1", "tip2", "tip3"]}`;
 
-        const result = await model.generateContent(prompt);
-        const content = result.response.text();
+        const completion = await openai.chat.completions.create({
+          model: 'grok-2-1212',
+          messages: [{ role: 'user', content: prompt }]
+        });
+        const content = completion.choices[0].message.content;
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         
         if (jsonMatch) {

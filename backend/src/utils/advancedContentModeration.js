@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 /**
  * Advanced Multilingual Content Moderation
@@ -321,9 +321,9 @@ export const moderateText = async (text) => {
       };
     }
 
-    // Second: Gemini AI analysis for complex cases
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured');
+    // Second: Grok AI analysis for complex cases
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured');
       return { safe: true, scores: {}, reason: null, method: 'fallback' };
     }
 
@@ -331,8 +331,7 @@ export const moderateText = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `You are an advanced content moderation AI. Analyze this text for harmful content.
 
@@ -374,10 +373,13 @@ Respond ONLY with valid JSON:
   "language_detected": "language of the text"
 }`;
 
-    const result = await model.generateContent(prompt);
-    const content = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-1212',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const content = completion.choices[0].message.content;
     
-    console.log('Gemini moderation raw:', content);
+    console.log('Grok moderation raw:', content);
 
     // Parse response
     let jsonStr = content;
@@ -418,10 +420,10 @@ Respond ONLY with valid JSON:
       reason: reason || analysis.reason,
       detectedIssues: analysis.detected_issues || [],
       language: analysis.language_detected,
-      method: 'gemini'
+      method: 'grok'
     };
   } catch (error) {
-    console.error('Gemini moderation error:', error);
+    console.error('Grok moderation error:', error);
     // Fail OPEN for text - don't block on API error
     return { safe: true, scores: {}, reason: null, method: 'error-fallback' };
   }

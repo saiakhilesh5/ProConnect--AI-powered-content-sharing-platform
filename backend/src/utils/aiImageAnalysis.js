@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 // Available categories in the app
 const VALID_CATEGORIES = ['abstract', 'portrait', 'landscape', 'cyberpunk', 'minimal', 'other'];
@@ -25,18 +25,17 @@ const fetchImageAsBase64 = async (imageUrl) => {
  */
 export const analyzeImage = async (imageUrl) => {
   try {
-    console.log('Gemini API Key present:', !!process.env.GEMINI_API_KEY);
+    console.log('Grok API Key present:', !!process.env.GROK_API_KEY);
     
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('Gemini API key not configured, using fallback');
+    if (!process.env.GROK_API_KEY) {
+      console.warn('Grok API key not configured, using fallback');
       return getFallbackAnalysis();
     }
 
-    console.log('Calling Gemini Vision API for image:', imageUrl);
+    console.log('Calling Grok Vision API for image:', imageUrl);
     
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Initialize Grok (OpenAI-compatible)
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `You are an expert image analyst for a creative image sharing platform. Analyze this image and provide:
 1. A short, catchy title (max 50 characters, ONE LINE ONLY, no periods)
@@ -51,23 +50,23 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
     // Fetch image and convert to base64
     const imageBase64 = await fetchImageAsBase64(imageUrl);
     
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: imageBase64
-        }
-      }
-    ]);
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+        ]
+      }]
+    });
 
-    const response = await result.response;
-    const content = response.text();
+    const content = completion.choices[0].message.content;
     
-    console.log('Gemini raw response:', content);
+    console.log('Grok raw response:', content);
 
     if (!content) {
-      console.error('No content in Gemini response');
+      console.error('No content in Grok response');
       return getFallbackAnalysis();
     }
 
@@ -104,7 +103,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
       return getFallbackAnalysis();
     }
   } catch (error) {
-    console.error('Gemini Vision API error:', error.message);
+    console.error('Grok Vision API error:', error.message);
     console.error('Full error:', error);
     return getFallbackAnalysis();
   }

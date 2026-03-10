@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Image } from '../models/image.model.js';
 
 /**
@@ -14,12 +14,11 @@ import { Image } from '../models/image.model.js';
  */
 const parseNaturalLanguageQuery = async (query) => {
   try {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROK_API_KEY) {
       return { keywords: query.split(' '), category: null, mood: null, style: null };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     const prompt = `Analyze this image search query and extract search parameters.
 Query: "${query}"
@@ -37,8 +36,11 @@ Respond ONLY with valid JSON (no markdown):
   "subject": "person/animal/nature/architecture/object or null"
 }`;
 
-    const result = await model.generateContent(prompt);
-    const content = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-1212',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const content = completion.choices[0].message.content;
     
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -214,12 +216,11 @@ export const semanticSearch = async (query, options = {}) => {
  */
 export const findSimilarImages = async (imageUrl, limit = 10) => {
   try {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROK_API_KEY) {
       return { success: false, results: [], error: 'AI not configured' };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Analyze the reference image
     const response = await fetch(imageUrl);
@@ -237,12 +238,18 @@ Respond ONLY with valid JSON (no markdown):
   "colors": ["dominant_color1", "dominant_color2"]
 }`;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
-    ]);
+    const simCompletion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+        ]
+      }]
+    });
 
-    const content = result.response.text();
+    const content = simCompletion.choices[0].message.content;
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     
     if (!jsonMatch) {

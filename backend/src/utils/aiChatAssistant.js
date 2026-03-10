@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Image } from '../models/image.model.js';
 import { User } from '../models/user.model.js';
 import { Like } from '../models/like.model.js';
@@ -239,7 +239,7 @@ const extractSearchTopic = (message) => {
 
 export const chatWithAssistant = async (userId, message, imageId = null) => {
   try {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROK_API_KEY) {
       return {
         success: false,
         message: "AI Assistant is not configured. Please contact support."
@@ -287,21 +287,20 @@ ${trendingContext ? JSON.stringify(trendingContext, null, 2) : 'No trending data
 
 Current date: ${new Date().toLocaleDateString()}`;
 
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const chat = model.startChat({
-      history: [],
-      generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.7,
-      },
-    });
+    // Initialize Grok (OpenAI-compatible)
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Send message with system context
-    const result = await chat.sendMessage(`${systemPrompt}\n\nUser question: ${message}`);
-    const response = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-1212',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+    const response = completion.choices[0].message.content;
 
     return {
       success: true,
@@ -327,12 +326,11 @@ Current date: ${new Date().toLocaleDateString()}`;
  */
 export const suggestCaptions = async (imageUrl, category = 'other') => {
   try {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROK_API_KEY) {
       return { success: false, captions: [] };
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const openai = new OpenAI({ apiKey: process.env.GROK_API_KEY, baseURL: 'https://api.x.ai/v1' });
 
     // Fetch image as base64
     const response = await fetch(imageUrl);
@@ -351,12 +349,18 @@ Make captions:
 - Include relevant emojis
 - 50-100 characters each`;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
-    ]);
+    const completion = await openai.chat.completions.create({
+      model: 'grok-2-vision-1212',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+        ]
+      }]
+    });
 
-    const content = result.response.text();
+    const content = completion.choices[0].message.content;
     
     // Parse JSON array
     const jsonMatch = content.match(/\[[\s\S]*\]/);
