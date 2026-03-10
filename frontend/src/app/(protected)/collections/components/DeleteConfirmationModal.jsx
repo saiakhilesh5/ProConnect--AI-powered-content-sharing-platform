@@ -26,7 +26,7 @@ const DeleteConfirmationModal = ({
         <div className="pt-4 flex justify-end gap-3">
           <button 
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+            className="px-4 py-2 rounded-lg bg-input hover:bg-secondary transition-colors"
           >
             Cancel
           </button>
@@ -43,3 +43,4 @@ const DeleteConfirmationModal = ({
 };
 
 export default DeleteConfirmationModal; 
+

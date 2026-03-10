@@ -36,7 +36,7 @@ export const analyzeImage = async (imageUrl) => {
     
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `You are an expert image analyst for a creative image sharing platform. Analyze this image and provide:
 1. A short, catchy title (max 50 characters, ONE LINE ONLY, no periods)

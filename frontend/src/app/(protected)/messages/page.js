@@ -87,6 +87,11 @@ export default function MessagesPage() {
     uploadVoiceMessage,
     forwardMessage,
     createGroup,
+    updateGroup,
+    addGroupMembers,
+    removeGroupMember,
+    leaveGroup,
+    makeGroupAdmin,
     getUserStatus,
     createPoll,
     votePoll,
@@ -121,6 +126,14 @@ export default function MessagesPage() {
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
+
+  // Group info panel state
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [addingGroupMembers, setAddingGroupMembers] = useState(false);
+  const [groupMemberSearchQuery, setGroupMemberSearchQuery] = useState("");
+  const [groupMemberSearchResults, setGroupMemberSearchResults] = useState([]);
+  const [selectedNewMembers, setSelectedNewMembers] = useState([]);
+  const groupMemberSearchTimeout = useRef(null);
   
   // Poll creation state
   const [pollQuestion, setPollQuestion] = useState("");
@@ -451,10 +464,15 @@ export default function MessagesPage() {
 
   // Filter conversations by search
   const conversationsList = showArchived ? archivedConversations : conversations;
-  const filteredConversations = conversationsList.filter((conv) =>
-    conv.participant?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.participant?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConversations = conversationsList.filter((conv) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    if (conv.isGroup) return conv.groupName?.toLowerCase().includes(q);
+    return (
+      conv.participant?.fullName?.toLowerCase().includes(q) ||
+      conv.participant?.username?.toLowerCase().includes(q)
+    );
+  });
 
   // Handle unarchive/archive action
   const handleArchiveToggle = async (conversationId) => {
@@ -497,7 +515,81 @@ export default function MessagesPage() {
   const handleSelectConversation = (conv) => {
     setActiveConversation(conv);
     setShowMobileChat(true);
+    setShowGroupInfo(false);
   };
+
+  // Group management
+  const handleLeaveGroup = async () => {
+    if (!activeConversation) return;
+    try {
+      await leaveGroup(activeConversation._id);
+      setActiveConversation(null);
+      setShowGroupInfo(false);
+      fetchConversations();
+    } catch (error) {
+      console.error("Failed to leave group:", error);
+    }
+  };
+
+  const handleRemoveGroupMember = async (memberId) => {
+    if (!activeConversation) return;
+    try {
+      await removeGroupMember(activeConversation._id, memberId);
+      setActiveConversation(prev => ({
+        ...prev,
+        participants: prev.participants.filter(p => (p.user?._id || p._id) !== memberId),
+      }));
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+    }
+  };
+
+  const handleMakeGroupAdmin = async (memberId) => {
+    if (!activeConversation) return;
+    try {
+      await makeGroupAdmin(activeConversation._id, memberId);
+      setActiveConversation(prev => ({
+        ...prev,
+        admins: [...(prev.admins || []), memberId],
+      }));
+    } catch (error) {
+      console.error("Failed to make admin:", error);
+    }
+  };
+
+  const handleAddGroupMembers = async () => {
+    if (!activeConversation || selectedNewMembers.length === 0) return;
+    try {
+      const updated = await addGroupMembers(activeConversation._id, selectedNewMembers.map(m => m._id));
+      if (updated) setActiveConversation(updated);
+      setSelectedNewMembers([]);
+      setGroupMemberSearchQuery("");
+      setGroupMemberSearchResults([]);
+      setAddingGroupMembers(false);
+    } catch (error) {
+      console.error("Failed to add members:", error);
+    }
+  };
+
+  // Search users for adding to group
+  useEffect(() => {
+    if (groupMemberSearchTimeout.current) clearTimeout(groupMemberSearchTimeout.current);
+    if (!groupMemberSearchQuery.trim()) { setGroupMemberSearchResults([]); return; }
+    groupMemberSearchTimeout.current = setTimeout(async () => {
+      try {
+        const response = await api.get(`/api/users/search?query=${encodeURIComponent(groupMemberSearchQuery)}`);
+        if (response.data?.data) {
+          const existingIds = new Set(
+            (activeConversation?.participants || []).map(p => p.user?._id || p._id)
+          );
+          setGroupMemberSearchResults(
+            response.data.data.filter(u => u._id !== user?._id && !existingIds.has(u._id))
+          );
+        }
+      } catch {}
+    }, 300);
+    return () => clearTimeout(groupMemberSearchTimeout.current);
+  }, [groupMemberSearchQuery, activeConversation, api, user]);
 
   // Format time only (h:mm a) for message bubbles
   const formatMessageTime = (date) => {
@@ -782,10 +874,17 @@ export default function MessagesPage() {
               >
                 <div className="relative">
                   <img
-                    src={conv.participant?.profilePicture || "/images/default-profile.jpg"}
-                    alt={conv.participant?.fullName}
-                    className="w-12 h-12 rounded-full object-cover"
+                    src={conv.isGroup
+                      ? (conv.groupImage || "/images/default-profile.jpg")
+                      : (conv.participant?.profilePicture || "/images/default-profile.jpg")}
+                    alt={conv.isGroup ? conv.groupName : conv.participant?.fullName}
+                    className={`w-12 h-12 object-cover ${conv.isGroup ? "rounded-xl" : "rounded-full"}`}
                   />
+                  {conv.isGroup && (
+                    <span className="absolute -bottom-1 -right-1 bg-violet-600 rounded-full p-0.5">
+                      <Users className="h-3 w-3 text-white" />
+                    </span>
+                  )}
                   {conv.unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                       {conv.unreadCount}
@@ -795,7 +894,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-foreground truncate">
-                      {conv.participant?.fullName}
+                      {conv.isGroup ? conv.groupName : conv.participant?.fullName}
                     </p>
                     {conv.lastMessage && (
                       <span className="text-xs text-muted-foreground">
@@ -833,19 +932,25 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft className="h-5 w-5 text-foreground" />
                 </button>
-                <div className="relative">
+                <button
+                  className="relative cursor-pointer"
+                  onClick={() => activeConversation.isGroup && setShowGroupInfo(true)}
+                >
                   <img
                     src={activeConversation.isGroup 
-                      ? (activeConversation.groupImage || "/images/default-group.jpg")
+                      ? (activeConversation.groupImage || "/images/default-profile.jpg")
                       : (activeConversation.participant?.profilePicture || "/images/default-profile.jpg")}
                     alt={activeConversation.isGroup ? activeConversation.groupName : activeConversation.participant?.fullName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className={`w-10 h-10 object-cover ${activeConversation.isGroup ? "rounded-xl" : "rounded-full"}`}
                   />
                   {userStatus?.isOnline && !activeConversation.isGroup && (
                     <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-zinc-900 rounded-full"></span>
                   )}
-                </div>
-                <div>
+                </button>
+                <button
+                  className="text-left"
+                  onClick={() => activeConversation.isGroup && setShowGroupInfo(true)}
+                >
                   <p className="font-medium text-foreground">
                     {activeConversation.isGroup 
                       ? activeConversation.groupName 
@@ -856,7 +961,7 @@ export default function MessagesPage() {
                       ? `${activeConversation.participants?.length || 0} members`
                       : (getStatusText() || `@${activeConversation.participant?.username}`)}
                   </p>
-                </div>
+                </button>
               </div>
               
               <div className="flex items-center gap-1">
@@ -879,6 +984,18 @@ export default function MessagesPage() {
                 >
                   <Video className="h-5 w-5" />
                 </Button>
+
+                {/* Group Info Button */}
+                {activeConversation.isGroup && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowGroupInfo(true)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Users className="h-5 w-5" />
+                  </Button>
+                )}
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -907,6 +1024,17 @@ export default function MessagesPage() {
                     >
                       <BarChart2 className="h-4 w-4 mr-2" /> Create Poll
                     </DropdownMenuItem>
+                    {activeConversation.isGroup && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={handleLeaveGroup}
+                          className="text-red-500 hover:bg-muted"
+                        >
+                          <X className="h-4 w-4 mr-2" /> Leave Group
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
@@ -1344,6 +1472,166 @@ export default function MessagesPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            {/* Group Info Side Panel */}
+            {showGroupInfo && activeConversation?.isGroup && (
+              <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowGroupInfo(false)}>
+                <div
+                  className="w-full max-w-sm bg-card border-l border-border h-full flex flex-col shadow-2xl overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Panel Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h2 className="text-lg font-semibold text-foreground">Group Info</h2>
+                    <Button variant="ghost" size="icon" onClick={() => setShowGroupInfo(false)}>
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+
+                  {/* Group Avatar + Name */}
+                  <div className="flex flex-col items-center py-6 px-4 border-b border-border gap-3">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-muted">
+                      <img
+                        src={activeConversation.groupImage || "/images/default-profile.jpg"}
+                        alt={activeConversation.groupName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-semibold text-foreground">{activeConversation.groupName}</p>
+                      {activeConversation.groupDescription && (
+                        <p className="text-sm text-muted-foreground mt-1">{activeConversation.groupDescription}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Group · {activeConversation.participants?.length || 0} members
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Members Section */}
+                  <div className="flex-1 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-foreground">{activeConversation.participants?.length || 0} Members</h3>
+                      {/* Add member button — only admins */}
+                      {(activeConversation.admins?.includes(user?._id) || activeConversation.participants?.find(p => (p.user?._id || p._id) === user?._id)?.isAdmin) && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-violet-400 hover:text-violet-300"
+                          onClick={() => setAddingGroupMembers(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Add members inline searchbox */}
+                    {addingGroupMembers && (
+                      <div className="mb-4 space-y-2">
+                        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted border border-border focus-within:ring-1 focus-within:ring-primary">
+                          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <input
+                            placeholder="Search users to add..."
+                            value={groupMemberSearchQuery}
+                            onChange={(e) => setGroupMemberSearchQuery(e.target.value)}
+                            className="flex-1 bg-transparent text-foreground placeholder-muted-foreground text-sm"
+                            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                            autoFocus
+                          />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setAddingGroupMembers(false); setGroupMemberSearchQuery(""); setSelectedNewMembers([]); }}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {selectedNewMembers.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedNewMembers.map(m => (
+                              <span key={m._id} className="flex items-center gap-1 bg-violet-600/20 text-violet-300 text-xs px-2 py-0.5 rounded-full">
+                                {m.fullName}
+                                <button onClick={() => setSelectedNewMembers(prev => prev.filter(x => x._id !== m._id))}><X className="h-3 w-3" /></button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                          {groupMemberSearchResults.map(u => (
+                            <div key={u._id} onClick={() => setSelectedNewMembers(prev => prev.some(x => x._id === u._id) ? prev.filter(x => x._id !== u._id) : [...prev, u])} className="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted">
+                              <img src={u.profilePicture || "/images/default-profile.jpg"} className="w-7 h-7 rounded-full object-cover" alt={u.fullName} />
+                              <span className="text-sm text-foreground">{u.fullName}</span>
+                              {selectedNewMembers.some(x => x._id === u._id) && <Check className="h-4 w-4 text-violet-400 ml-auto" />}
+                            </div>
+                          ))}
+                        </div>
+                        {selectedNewMembers.length > 0 && (
+                          <Button onClick={handleAddGroupMembers} className="w-full bg-violet-600 hover:bg-violet-700" size="sm">
+                            Add {selectedNewMembers.length} member{selectedNewMembers.length > 1 ? 's' : ''}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Member list */}
+                    <div className="space-y-1">
+                      {(activeConversation.participants || []).map((participant) => {
+                        const memberUser = participant.user || participant;
+                        const memberId = memberUser._id;
+                        const isAdmin = participant.isAdmin || activeConversation.admins?.includes(memberId);
+                        const isCurrentUser = memberId === user?._id;
+                        const iAmAdmin = activeConversation.admins?.includes(user?._id) ||
+                          activeConversation.participants?.find(p => (p.user?._id || p._id) === user?._id)?.isAdmin;
+                        return (
+                          <div key={memberId} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted group">
+                            <img
+                              src={memberUser.profilePicture || "/images/default-profile.jpg"}
+                              className="w-9 h-9 rounded-full object-cover"
+                              alt={memberUser.fullName}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {memberUser.fullName || memberUser.username}
+                                {isCurrentUser && <span className="text-muted-foreground"> (You)</span>}
+                              </p>
+                              {isAdmin && (
+                                <p className="text-xs text-violet-400">Admin</p>
+                              )}
+                            </div>
+                            {!isCurrentUser && iAmAdmin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-card border-border">
+                                  {!isAdmin && (
+                                    <DropdownMenuItem onClick={() => handleMakeGroupAdmin(memberId)} className="text-foreground hover:bg-muted text-sm">
+                                      Make Admin
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => handleRemoveGroupMember(memberId)} className="text-red-500 hover:bg-muted text-sm">
+                                    Remove
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Leave Group */}
+                  <div className="p-4 border-t border-border">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                      onClick={handleLeaveGroup}
+                    >
+                      <X className="h-4 w-4 mr-2" /> Leave Group
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">

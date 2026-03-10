@@ -186,7 +186,7 @@ export default function RegisterForm() {
                 ? "bg-purple-500 text-white"
                 : idx + 1 < currentStep
                 ? "bg-green-500 text-white"
-                : "bg-gray-700 text-gray-400"
+                : "bg-secondary text-muted-foreground"
             } h-8 w-8 text-sm font-medium`}
           >
             {idx + 1 < currentStep ? (
@@ -198,7 +198,7 @@ export default function RegisterForm() {
           {idx < totalSteps - 1 && (
             <div
               className={`h-1 w-12 mx-1 ${
-                idx + 1 < currentStep ? "bg-green-500" : "bg-gray-700"
+                idx + 1 < currentStep ? "bg-green-500" : "bg-secondary"
               }`}
             ></div>
           )}
@@ -280,7 +280,7 @@ export default function RegisterForm() {
                 whileTap={{ scale: 0.97 }}
                 type="button"
                 onClick={prevStep}
-                className="flex items-center px-6 py-3 rounded-xl text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 transition-all duration-200"
+                className="flex items-center px-6 py-3 rounded-xl text-sm font-medium text-white bg-input hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 transition-all duration-200"
               >
                 <ChevronLeft className="h-5 w-5 mr-1" />
                 Back
@@ -388,7 +388,7 @@ export default function RegisterForm() {
         transition={{ delay: 0.6, duration: 0.5 }}
         className="mt-8 text-center"
       >
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
             href="/login"
@@ -401,3 +401,4 @@ export default function RegisterForm() {
     </div>
   );
 }
+

@@ -91,7 +91,7 @@ const SecuritySection = ({ user, updatePassword }) => {
           </div>
 
           {changingPassword ? (
-            <div className="space-y-4 bg-zinc-800/50 border border-white/10 rounded-lg p-4">
+            <div className="space-y-4 bg-input border border-border rounded-lg p-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Current Password</label>
                 <input
@@ -99,7 +99,7 @@ const SecuritySection = ({ user, updatePassword }) => {
                   name="oldPassword"
                   value={passwordData.oldPassword}
                   onChange={handlePasswordChange}
-                  className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="bg-input border border-border rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
@@ -110,7 +110,7 @@ const SecuritySection = ({ user, updatePassword }) => {
                   name="newPassword"
                   value={passwordData.newPassword}
                   onChange={handlePasswordChange}
-                  className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="bg-input border border-border rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
@@ -121,7 +121,7 @@ const SecuritySection = ({ user, updatePassword }) => {
                   name="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordChange}
-                  className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="bg-input border border-border rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
@@ -141,48 +141,48 @@ const SecuritySection = ({ user, updatePassword }) => {
               </div>
             </div>
           ) : (
-            <div className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 px-3">
+            <div className="bg-input border border-border rounded-lg py-2 px-3">
               <span className="text-gray-400">Set strong password to protect your account</span>
             </div>
           )}
         </div>
 
-        <div className="pt-4 border-t border-white/10">
+        <div className="pt-4 border-t border-border">
           <h3 className="font-medium mb-4">Account Information</h3>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+            <div className="flex justify-between bg-input border border-border rounded-lg p-3">
               <span className="text-gray-400">Provider</span>
               <span className="capitalize">{user?.provider || 'credentials'}</span>
             </div>
 
-            <div className="flex justify-between bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+            <div className="flex justify-between bg-input border border-border rounded-lg p-3">
               <span className="text-gray-400">Verified</span>
               <span>{user?.isVerified ? 'Yes' : 'No'}</span>
             </div>
 
-            <div className="flex justify-between bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+            <div className="flex justify-between bg-input border border-border rounded-lg p-3">
               <span className="text-gray-400">Premium</span>
               <span>{user?.isPremium ? 'Yes' : 'No'}</span>
             </div>
 
-            <div className="flex justify-between bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+            <div className="flex justify-between bg-input border border-border rounded-lg p-3">
               <span className="text-gray-400">Created Date</span>
               <span>{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
             </div>
 
-            <div className="flex justify-between bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+            <div className="flex justify-between bg-input border border-border rounded-lg p-3">
               <span className="text-gray-400">Last Login</span>
               <span>{user?.lastLogin ? formatDate(user.lastLogin) : 'N/A'}</span>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-white/10">
+        <div className="pt-4 border-t border-border">
           <h3 className="font-medium mb-4">Login History</h3>
           <div className="space-y-3">
             {user?.loginHistory ? (
               user.loginHistory.slice(0, 3).map((login, index) => (
-                <div key={index} className="bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+                <div key={index} className="bg-input border border-border rounded-lg p-3">
                   <div className="flex justify-between mb-1">
                     <span className="font-medium">{login.device || 'Unknown Device'}</span>
                     <span className="text-xs text-gray-400">{login.timestamp ? formatDate(login.timestamp) : 'N/A'}</span>
@@ -194,7 +194,7 @@ const SecuritySection = ({ user, updatePassword }) => {
                 </div>
               ))
             ) : (
-              <div className="bg-zinc-800/50 border border-white/10 rounded-lg p-3">
+              <div className="bg-input border border-border rounded-lg p-3">
                 <p className="text-sm text-gray-400">No login history available</p>
               </div>
             )}
@@ -206,3 +206,4 @@ const SecuritySection = ({ user, updatePassword }) => {
 };
 
 export default SecuritySection; 
+

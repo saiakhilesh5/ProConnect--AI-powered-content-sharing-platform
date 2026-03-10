@@ -51,7 +51,7 @@ const PublishingSettings = ({
               name="license"
               value={imageDetails.license}
               onChange={handleChange}
-              className="w-full bg-zinc-800/50 border border-white/10 rounded-lg py-2.5 px-3 sm:px-4 focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base"
+              className="w-full bg-input border border-border rounded-lg py-2.5 px-3 sm:px-4 focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm sm:text-base"
             >
               {licenses.map(license => (
                 <option key={license.id} value={license.id}>{license.name}</option>
@@ -78,7 +78,7 @@ const PublishingSettings = ({
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer touch-manipulation">
                   <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-zinc-700 peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  <div className="w-11 h-6 bg-secondary peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
                 </label>
               </div>
 
@@ -92,7 +92,7 @@ const PublishingSettings = ({
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer touch-manipulation">
                   <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-zinc-700 peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  <div className="w-11 h-6 bg-secondary peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
                 </label>
               </div>
 
@@ -111,7 +111,7 @@ const PublishingSettings = ({
                     checked={commentsAllowed}
                     onChange={(e) => setCommentsAllowed(e.target.checked)}
                   />
-                  <div className="w-11 h-6 bg-zinc-700 peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  <div className="w-11 h-6 bg-secondary peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
                 </label>
               </div>
             </div>

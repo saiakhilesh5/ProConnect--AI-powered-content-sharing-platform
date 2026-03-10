@@ -459,7 +459,7 @@ export default function UploadReelPage() {
                     ? "w-6 bg-violet-500"
                     : s < step
                     ? "bg-violet-500"
-                    : "bg-zinc-600"
+                    : "bg-secondary"
                 }`}
               />
             ))}
@@ -501,7 +501,7 @@ export default function UploadReelPage() {
             {mode === "upload" && (
               <div
                 onClick={() => videoInputRef.current?.click()}
-                className="aspect-[9/16] bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-violet-500 hover:bg-zinc-800/50 transition-all"
+                className="aspect-[9/16] bg-card border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-violet-500 hover:bg-secondary transition-all"
               >
                 <div className="w-20 h-20 bg-violet-600/20 rounded-full flex items-center justify-center mb-6">
                   <Upload className="h-10 w-10 text-violet-500" />
@@ -513,13 +513,13 @@ export default function UploadReelPage() {
                   Drag and drop or click to select
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 px-4">
-                  <span className="px-3 py-1 bg-zinc-800 rounded-full text-xs text-zinc-400">
+                  <span className="px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
                     MP4, WebM, MOV
                   </span>
-                  <span className="px-3 py-1 bg-zinc-800 rounded-full text-xs text-zinc-400">
+                  <span className="px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
                     Max 60 seconds
                   </span>
-                  <span className="px-3 py-1 bg-zinc-800 rounded-full text-xs text-zinc-400">
+                  <span className="px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
                     Max 100MB
                   </span>
                 </div>
@@ -548,7 +548,7 @@ export default function UploadReelPage() {
 
                 {/* Camera Loading */}
                 {!cameraReady && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
+                  <div className="absolute inset-0 flex items-center justify-center bg-card">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-500" />
                   </div>
                 )}
@@ -565,7 +565,7 @@ export default function UploadReelPage() {
 
                 {/* Recording Progress Bar */}
                 {isRecording && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-700">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-secondary">
                     <div
                       className="h-full bg-red-500 transition-all duration-1000"
                       style={{ width: `${(recordingTime / 60) * 100}%` }}
@@ -681,7 +681,7 @@ export default function UploadReelPage() {
               <h2 className="text-lg font-semibold">Edit Your Reel</h2>
 
               {/* Cover Image Selector */}
-              <div className="bg-zinc-900 rounded-xl p-4">
+              <div className="bg-card rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <ImageIcon className="h-5 w-5 text-violet-400" />
@@ -703,7 +703,7 @@ export default function UploadReelPage() {
                 
                 {showCoverSelector && (
                   <div className="space-y-4">
-                    <p className="text-sm text-zinc-400">
+                    <p className="text-sm text-muted-foreground">
                       Scrub through the video and click "Capture" to set cover image
                     </p>
                     <input
@@ -738,7 +738,7 @@ export default function UploadReelPage() {
                       alt="Cover"
                       className="w-16 h-28 object-cover rounded-lg"
                     />
-                    <p className="text-sm text-zinc-400">
+                    <p className="text-sm text-muted-foreground">
                       Frame at {coverTimestamp.toFixed(1)}s
                     </p>
                   </div>
@@ -746,7 +746,7 @@ export default function UploadReelPage() {
               </div>
 
               {/* Music Selector */}
-              <div className="bg-zinc-900 rounded-xl p-4">
+              <div className="bg-card rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <Music className="h-5 w-5 text-violet-400" />
@@ -761,13 +761,13 @@ export default function UploadReelPage() {
                 </div>
 
                 {selectedMusic.id !== "none" && !showMusicSelector && (
-                  <div className="flex items-center gap-3 bg-zinc-800 rounded-lg p-3">
+                  <div className="flex items-center gap-3 bg-input rounded-lg p-3">
                     <div className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center">
                       <Music className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{selectedMusic.name}</p>
-                      <p className="text-xs text-zinc-400">{selectedMusic.artist}</p>
+                      <p className="text-xs text-muted-foreground">{selectedMusic.artist}</p>
                     </div>
                     <button
                       onClick={() => setSelectedMusic(musicTracks[0])}
@@ -790,10 +790,10 @@ export default function UploadReelPage() {
                         className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
                           selectedMusic.id === track.id
                             ? "bg-violet-600"
-                            : "bg-zinc-800 hover:bg-zinc-700"
+                            : "bg-secondary hover:bg-secondary-hover"
                         }`}
                       >
-                        <div className="w-8 h-8 bg-zinc-700 rounded flex items-center justify-center">
+                        <div className="w-8 h-8 bg-secondary rounded flex items-center justify-center">
                           {track.id === "none" ? (
                             <VolumeX className="h-4 w-4" />
                           ) : (
@@ -803,7 +803,7 @@ export default function UploadReelPage() {
                         <div className="text-left">
                           <p className="text-sm font-medium">{track.name}</p>
                           {track.artist && (
-                            <p className="text-xs text-zinc-400">{track.artist}</p>
+                            <p className="text-xs text-muted-foreground">{track.artist}</p>
                           )}
                         </div>
                         {selectedMusic.id === track.id && (
@@ -853,7 +853,7 @@ export default function UploadReelPage() {
                   <Music className="h-5 w-5 text-violet-400" />
                   <div>
                     <p className="text-sm font-medium text-white">{selectedMusic.name}</p>
-                    <p className="text-xs text-zinc-400">{selectedMusic.artist}</p>
+                    <p className="text-xs text-muted-foreground">{selectedMusic.artist}</p>
                   </div>
                 </div>
               )}
@@ -918,7 +918,7 @@ export default function UploadReelPage() {
                   placeholder="Write a caption for your reel..."
                   rows={4}
                   maxLength={500}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+                  className="w-full bg-input border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
                 />
                 <p className="text-zinc-500 text-sm mt-1">
                   {formData.caption.length}/500
@@ -934,15 +934,15 @@ export default function UploadReelPage() {
                     setFormData((prev) => ({ ...prev, category: value }))
                   }
                 >
-                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-input border-border text-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectContent className="bg-input border-border">
                     {categories.map((cat) => (
                       <SelectItem
                         key={cat.value}
                         value={cat.value}
-                        className="text-white hover:bg-zinc-800"
+                        className="text-foreground hover:bg-secondary"
                       >
                         {cat.label}
                       </SelectItem>
@@ -969,7 +969,7 @@ export default function UploadReelPage() {
                   value={formData.tags}
                   onChange={handleInputChange}
                   placeholder="fyp, viral, trending (comma separated)"
-                  className="bg-zinc-900 border-zinc-700 text-white"
+                  className="bg-input border-border text-foreground"
                 />
                 <p className="text-zinc-500 text-xs mt-1">
                   Add hashtags to help people discover your reel
@@ -994,7 +994,7 @@ export default function UploadReelPage() {
                       className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-all ${
                         formData.visibility === option.value
                           ? "border-violet-500 bg-violet-500/20 text-violet-400"
-                          : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600"
+                          : "border-border bg-input text-muted-foreground hover:border-border"
                       }`}
                     >
                       <option.icon className="h-5 w-5" />
@@ -1005,9 +1005,9 @@ export default function UploadReelPage() {
               </div>
 
               {/* Comments Toggle */}
-              <div className="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+              <div className="flex items-center justify-between bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center gap-3">
-                  <MessageSquare className="h-5 w-5 text-zinc-400" />
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <span>Allow comments</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -1047,3 +1047,4 @@ export default function UploadReelPage() {
     </div>
   );
 }
+

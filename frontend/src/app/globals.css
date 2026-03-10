@@ -745,3 +745,64 @@ textarea::placeholder {
     color: black;
   }
 }
+
+/* ============================================================
+   LIGHT MODE: Fix hardcoded dark zinc/gray utility classes
+   Overrides dark-only bg/text/border when NOT in dark mode
+   ============================================================ */
+
+/* Form inputs & textareas: always use theme-aware input styles */
+html:not(.dark) input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: rgb(var(--input));
+  color: rgb(var(--foreground));
+  border-color: rgb(var(--border));
+}
+
+/* Containers with hardcoded dark backgrounds → card/input */
+html:not(.dark) [class*="bg-zinc-9"]:not([class*="absolute"]):not([class*="fixed"]):not(.story-viewer):not(.call-ui),
+html:not(.dark) [class*="bg-zinc-8"]:not([class*="absolute"]):not([class*="fixed"]):not(.story-viewer):not(.call-ui),
+html:not(.dark) [class*="bg-gray-9"]:not([class*="absolute"]):not([class*="fixed"]),
+html:not(.dark) [class*="bg-gray-8"]:not([class*="absolute"]):not([class*="fixed"]) {
+  background-color: rgb(var(--card));
+  color: rgb(var(--foreground));
+}
+
+/* Override text-white in non-media-overlay contexts */
+html:not(.dark) [class~="text-white"]:not([class*="btn"]):not(button):not(a):not(span[class*="badge"]) {
+  color: rgb(var(--foreground));
+}
+
+/* Borders: override white/10 and zinc borders */
+html:not(.dark) [class*="border-white\/10"],
+html:not(.dark) [class*="border-white\/20"] {
+  border-color: rgb(var(--border));
+}
+html:not(.dark) [class*="border-zinc-7"],
+html:not(.dark) [class*="border-zinc-8"] {
+  border-color: rgb(var(--border));
+}
+
+/* Placeholder text */
+html:not(.dark) [class*="placeholder-zinc"],
+html:not(.dark) [class*="placeholder-gray"] {
+  color: rgb(var(--muted-foreground));
+}
+html:not(.dark) ::placeholder {
+  color: rgb(var(--muted-foreground));
+}
+
+/* Skeleton/loading states */
+html:not(.dark) [class*="bg-zinc-7"] {
+  background-color: rgb(var(--muted));
+}
+
+/* Allow fixed/absolute overlays (story viewer, calls, video) to keep dark */
+.story-viewer,
+.call-ui,
+[data-overlay="dark"],
+[class*="fixed inset-0"],
+.video-overlay {
+  /* Reset: these elements keep their own dark backgrounds */
+}

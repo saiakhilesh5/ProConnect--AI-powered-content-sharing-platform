@@ -164,7 +164,7 @@ const ProfileSection = ({ user, updateProfile }) => {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+                  className="bg-input border border-border rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
                   maxLength={33}
                   placeholder="Enter your display name"
                 />
@@ -213,7 +213,7 @@ const ProfileSection = ({ user, updateProfile }) => {
                   onChange={handleInputChange}
                   rows={4}
                   maxLength={260}
-                  className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+                  className="bg-input border border-border rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
                   placeholder="Tell us about yourself..."
                 />
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
@@ -261,7 +261,7 @@ const ProfileSection = ({ user, updateProfile }) => {
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1.5 sm:mb-2">Username</label>
           <div className="flex items-center">
-            <div className="text-white/30 bg-zinc-800/50 border border-white/10 rounded-l-lg py-2 sm:py-3 px-3 sm:px-4 text-sm sm:text-base font-mono">
+            <div className="text-white/30 bg-input border border-border rounded-l-lg py-2 sm:py-3 px-3 sm:px-4 text-sm sm:text-base font-mono">
               profile/
             </div>
             <input
@@ -269,7 +269,7 @@ const ProfileSection = ({ user, updateProfile }) => {
               name="username"
               value={formData.username}
               // onChange={handleInputChange}
-              className="bg-zinc-800/50 border border-white/10 border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 focus:outline-none focus:ring-2 focus:ring-violet-500 font-mono text-sm sm:text-base transition-all duration-300"
+              className="bg-input border border-border border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 focus:outline-none focus:ring-2 focus:ring-violet-500 font-mono text-sm sm:text-base transition-all duration-300"
               disabled
             />
           </div>
@@ -282,7 +282,7 @@ const ProfileSection = ({ user, updateProfile }) => {
             name="email"
             value={formData.email}
             // onChange={handleInputChange}
-            className="bg-zinc-800/50 border border-white/10 rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm sm:text-base transition-all duration-300"
+            className="bg-input border border-border rounded-lg py-2 sm:py-3 px-3 sm:px-4 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm sm:text-base transition-all duration-300"
             disabled
           />
         </div>
@@ -292,7 +292,7 @@ const ProfileSection = ({ user, updateProfile }) => {
           {editingSocials ? (
             <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center">
-                <div className="text-white/30 bg-zinc-800/50 border border-white/10 rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
+                <div className="text-white/30 bg-input border border-border rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
                   <Instagram className="w-4 sm:w-5 h-4 sm:h-5" />
                 </div>
                 <input
@@ -301,12 +301,12 @@ const ProfileSection = ({ user, updateProfile }) => {
                   value={formData.socialLinks.instagram}
                   onChange={handleInputChange}
                   placeholder="instagram.com/yourusername"
-                  className="bg-zinc-800/50 border border-white/10 border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+                  className="bg-input border border-border border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
                 />
               </div>
 
               <div className="flex items-center">
-                <div className="text-white/30 bg-zinc-800/50 border border-white/10 rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
+                <div className="text-white/30 bg-input border border-border rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
                   <Twitter className="w-4 sm:w-5 h-4 sm:h-5" />
                 </div>
                 <input
@@ -315,12 +315,12 @@ const ProfileSection = ({ user, updateProfile }) => {
                   value={formData.socialLinks.twitter}
                   onChange={handleInputChange}
                   placeholder="twitter.com/yourusername"
-                  className="bg-zinc-800/50 border border-white/10 border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+                  className="bg-input border border-border border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
                 />
               </div>
 
               <div className="flex items-center">
-                <div className="text-white/30 bg-zinc-800/50 border border-white/10 rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
+                <div className="text-white/30 bg-input border border-border rounded-l-lg py-2 sm:py-3 px-3 sm:px-4">
                   <Facebook className="w-4 sm:w-5 h-4 sm:h-5" />
                 </div>
                 <input
@@ -329,7 +329,7 @@ const ProfileSection = ({ user, updateProfile }) => {
                   value={formData.socialLinks.facebook}
                   onChange={handleInputChange}
                   placeholder="facebook.com/yourusername"
-                  className="bg-zinc-800/50 border border-white/10 border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+                  className="bg-input border border-border border-l-0 rounded-r-lg py-2 sm:py-3 px-3 sm:px-4 flex-1 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
                 />
               </div>
 
@@ -408,7 +408,7 @@ const ProfileSection = ({ user, updateProfile }) => {
             name="userStatus"
             value={formData.userStatus}
             onChange={handleInputChange}
-            className="bg-zinc-800/50 border border-white/10 rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+            className="bg-input border border-border rounded-lg py-3 px-4 w-full text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
           >
             <option value="online">🟢 Online</option>
             <option value="away">🌙 Away</option>
@@ -461,3 +461,5 @@ const ProfileSection = ({ user, updateProfile }) => {
 };
 
 export default ProfileSection;
+
+

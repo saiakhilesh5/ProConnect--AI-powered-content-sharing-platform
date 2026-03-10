@@ -16,8 +16,8 @@ const CollectionsTab = ({
           <div key={idx} className="bg-card border border-border rounded-xl overflow-hidden flex animate-pulse">
             <div className="w-16 h-16 bg-zinc-800"></div>
             <div className="p-4 flex-1">
-              <div className="h-5 w-1/2 bg-zinc-800 rounded mb-2"></div>
-              <div className="h-4 w-3/4 bg-zinc-800 rounded"></div>
+              <div className="h-5 w-1/2 bg-input rounded mb-2"></div>
+              <div className="h-4 w-3/4 bg-input rounded"></div>
             </div>
           </div>
         ))

@@ -19,7 +19,7 @@ const EditCollectionModal = ({
             <label className="block text-sm text-gray-400 mb-1">Collection Name</label>
             <input 
               type="text" 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               placeholder="e.g. Abstract Art"
               value={collectionToEdit.name}
               onChange={(e) => setCollectionToEdit({ ...collectionToEdit, name: e.target.value })}
@@ -29,7 +29,7 @@ const EditCollectionModal = ({
           <div>
             <label className="block text-sm text-gray-400 mb-1">Description</label>
             <textarea 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-24"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-24"
               placeholder="What's this collection about?"
               value={collectionToEdit.description || ''}
               onChange={(e) => setCollectionToEdit({ ...collectionToEdit, description: e.target.value })}
@@ -40,7 +40,7 @@ const EditCollectionModal = ({
             <label className="block text-sm text-gray-400 mb-1">Add Tags</label>
             <input 
               type="text" 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               placeholder="Separate tags with commas"
               value={collectionToEdit.tags}
               onChange={(e) => setCollectionToEdit({ ...collectionToEdit, tags: e.target.value })}
@@ -84,7 +84,7 @@ const EditCollectionModal = ({
           <div className="pt-4 flex justify-end gap-3">
             <button 
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+              className="px-4 py-2 rounded-lg bg-input hover:bg-secondary transition-colors"
             >
               Cancel
             </button>
@@ -102,3 +102,4 @@ const EditCollectionModal = ({
 };
 
 export default EditCollectionModal; 
+

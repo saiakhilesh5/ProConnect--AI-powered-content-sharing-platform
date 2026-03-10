@@ -59,12 +59,12 @@ export function MessageReactions({
             className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all ${
               group.hasCurrentUser 
                 ? 'bg-blue-500/20 border border-blue-500/40' 
-                : 'bg-zinc-700/50 border border-zinc-600/30 hover:bg-zinc-600/50'
+                : 'bg-muted border border-border hover:bg-secondary'
             }`}
           >
             <span className="text-sm">{group.emoji}</span>
             {group.count > 1 && (
-              <span className="text-zinc-300">{group.count}</span>
+              <span className="text-foreground">{group.count}</span>
             )}
           </motion.button>
         ))}
@@ -126,11 +126,11 @@ function ReactionsDetailModal({ reactions, onClose }) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-zinc-900 border border-zinc-700 rounded-2xl w-80 max-h-96 overflow-hidden shadow-2xl"
+        className="bg-card border border-border rounded-2xl w-80 max-h-96 overflow-hidden shadow-2xl"
       >
         {/* Header */}
-        <div className="p-4 border-b border-zinc-700 flex items-center justify-between">
-          <h3 className="font-semibold text-white">Reactions</h3>
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Reactions</h3>
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-white transition-colors"
@@ -140,13 +140,13 @@ function ReactionsDetailModal({ reactions, onClose }) {
         </div>
         
         {/* Emoji tabs */}
-        <div className="flex items-center gap-2 p-2 border-b border-zinc-700 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-2 p-2 border-b border-border overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setSelectedEmoji(null)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               selectedEmoji === null 
                 ? 'bg-blue-500 text-white' 
-                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             All ({reactions.length})
@@ -158,7 +158,7 @@ function ReactionsDetailModal({ reactions, onClose }) {
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${
                 selectedEmoji === emoji 
                   ? 'bg-blue-500 text-white' 
-                  : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
               }`}
             >
               <span>{emoji}</span>
@@ -172,9 +172,9 @@ function ReactionsDetailModal({ reactions, onClose }) {
           {filteredUsers.map((user, index) => (
             <div
               key={user?._id || index}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors"
             >
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-zinc-700">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-secondary">
                 {user?.profilePicture ? (
                   <Image
                     src={user.profilePicture}
@@ -192,7 +192,7 @@ function ReactionsDetailModal({ reactions, onClose }) {
                 <p className="text-white font-medium truncate">
                   {user?.fullName || 'Unknown User'}
                 </p>
-                <p className="text-sm text-zinc-400 truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   @{user?.username || 'unknown'}
                 </p>
               </div>
@@ -243,7 +243,7 @@ export function QuickReactionPicker({
       exit={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
       className={`absolute ${positionClasses[position]} left-1/2 -translate-x-1/2 z-50 ${className}`}
     >
-      <div className="flex items-center gap-1 bg-zinc-800 border border-zinc-600 rounded-full px-2 py-1.5 shadow-xl">
+      <div className="flex items-center gap-1 bg-input border border-border rounded-full px-2 py-1.5 shadow-xl">
         {QUICK_REACTIONS.map((emoji, index) => (
           <motion.button
             key={emoji}
@@ -256,7 +256,7 @@ export function QuickReactionPicker({
               onSelect?.(emoji);
               onClose?.();
             }}
-            className="w-8 h-8 flex items-center justify-center text-xl hover:bg-zinc-700 rounded-full transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-xl hover:bg-secondary rounded-full transition-colors"
           >
             {emoji}
           </motion.button>
@@ -284,11 +284,11 @@ export function TypingIndicator({ users = [], className = '' }) {
       className={`flex items-center gap-2 ${className}`}
     >
       {/* Typing dots */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-zinc-700/50 rounded-2xl">
+      <div className="flex items-center gap-1 px-3 py-2 bg-muted rounded-2xl">
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
-            className="w-2 h-2 bg-zinc-400 rounded-full"
+            className="w-2 h-2 bg-muted-foreground rounded-full"
             animate={{
               y: [0, -5, 0],
             }}
@@ -404,7 +404,7 @@ export function SeenByIndicator({ seenBy = [], currentUserId, className = '' }) 
         {others.slice(0, 3).map((user, i) => (
           <div
             key={user?._id || i}
-            className="relative w-4 h-4 rounded-full overflow-hidden border border-zinc-800 bg-zinc-700"
+            className="relative w-4 h-4 rounded-full overflow-hidden border border-border bg-zinc-700"
           >
             {user?.profilePicture ? (
               <Image
@@ -431,3 +431,4 @@ export function SeenByIndicator({ seenBy = [], currentUserId, className = '' }) 
 }
 
 export default MessageReactions;
+

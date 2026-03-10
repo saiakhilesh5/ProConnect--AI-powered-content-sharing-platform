@@ -19,7 +19,7 @@ const parseNaturalLanguageQuery = async (query) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Analyze this image search query and extract search parameters.
 Query: "${query}"
@@ -219,7 +219,7 @@ export const findSimilarImages = async (imageUrl, limit = 10) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Analyze the reference image
     const response = await fetch(imageUrl);

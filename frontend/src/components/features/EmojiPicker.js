@@ -194,19 +194,19 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
         exit={{ opacity: 0, scale: 0.9 }}
         className={`absolute ${positionClasses[position]} z-50`}
       >
-        <div className="bg-zinc-900 border border-zinc-700 rounded-full px-2 py-1.5 shadow-xl flex items-center gap-1">
+        <div className="bg-card border border-border rounded-full px-2 py-1.5 shadow-xl flex items-center gap-1">
           {QUICK_REACTIONS.map(emoji => (
             <button
               key={emoji}
               onClick={() => handleEmojiSelect(emoji)}
-              className="w-8 h-8 flex items-center justify-center text-xl hover:bg-zinc-700 rounded-full transition-all hover:scale-125"
+              className="w-8 h-8 flex items-center justify-center text-xl hover:bg-secondary rounded-full transition-all hover:scale-125"
             >
               {emoji}
             </button>
           ))}
           <button
             onClick={() => onClose?.(true)} // Pass true to open full picker
-            className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-zinc-700 rounded-full transition-all"
+            className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary rounded-full transition-all"
           >
             <span className="text-lg">+</span>
           </button>
@@ -223,11 +223,11 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
       exit={{ opacity: 0, y: 10 }}
       className={`absolute ${positionClasses[position]} z-50 w-80`}
     >
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl shadow-xl overflow-hidden">
         {/* Header with search */}
         <div className="p-2 border-b border-zinc-700">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 focus-within:ring-1 focus-within:ring-blue-500">
-            <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-input border border-border focus-within:ring-1 focus-within:ring-blue-500">
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <input
               ref={searchInputRef}
               type="text"
@@ -249,7 +249,7 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
         </div>
 
         {/* Category tabs */}
-        <div className="flex items-center border-b border-zinc-700 px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center border-b border-border px-1 overflow-x-auto scrollbar-hide">
           {Object.entries(EMOJI_CATEGORIES).map(([key, category]) => {
             const Icon = category.icon;
             const isActive = activeCategory === key;
@@ -266,8 +266,8 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
                 }}
                 className={`flex-shrink-0 p-2.5 transition-all ${
                   isActive
-                    ? 'text-blue-500 border-b-2 border-blue-500 bg-zinc-800/50'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+                    ? 'text-blue-500 border-b-2 border-blue-500 bg-muted'
+                    : 'text-zinc-400 hover:text-white hover:bg-secondary/30'
                 }`}
                 title={category.name}
               >
@@ -291,7 +291,7 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
                     <button
                       key={`${emoji}-${i}`}
                       onClick={() => handleEmojiSelect(emoji)}
-                      className="w-8 h-8 flex items-center justify-center text-xl hover:bg-zinc-700 rounded transition-all hover:scale-110"
+                      className="w-8 h-8 flex items-center justify-center text-xl hover:bg-secondary rounded transition-all hover:scale-110"
                     >
                       {emoji}
                     </button>
@@ -315,7 +315,7 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
                   <button
                     key={`${emoji}-${i}`}
                     onClick={() => handleEmojiSelect(emoji)}
-                    className="w-8 h-8 flex items-center justify-center text-xl hover:bg-zinc-700 rounded transition-all hover:scale-110"
+                    className="w-8 h-8 flex items-center justify-center text-xl hover:bg-secondary rounded transition-all hover:scale-110"
                   >
                     {emoji}
                   </button>
@@ -332,7 +332,7 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
         </div>
 
         {/* Skin tone selector */}
-        <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-700 bg-zinc-800/50">
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-input">
           <span className="text-xs text-zinc-500">Skin tone:</span>
           <div className="flex items-center gap-1">
             {['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿'].map((emoji, i) => (
@@ -340,7 +340,7 @@ export function EmojiPicker({ onSelect, onClose, showQuickReactions = false, pos
                 key={i}
                 onClick={() => setSkinTone(i)}
                 className={`w-6 h-6 flex items-center justify-center text-sm rounded transition-all ${
-                  skinTone === i ? 'bg-zinc-600 ring-1 ring-blue-500' : 'hover:bg-zinc-600'
+                  skinTone === i ? 'bg-secondary ring-1 ring-blue-500' : 'hover:bg-zinc-600'
                 }`}
               >
                 {emoji}
@@ -363,7 +363,7 @@ export function EmojiButton({ onSelect, className = '' }) {
       <button
         type="button"
         onClick={() => setShowPicker(!showPicker)}
-        className={`p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-full transition-colors ${className}`}
+        className={`p-2 text-muted-foreground hover:text-zinc-200 hover:bg-secondary rounded-full transition-colors ${className}`}
       >
         <Smile className="w-5 h-5" />
       </button>
@@ -385,3 +385,5 @@ export function EmojiButton({ onSelect, className = '' }) {
 }
 
 export default EmojiPicker;
+
+

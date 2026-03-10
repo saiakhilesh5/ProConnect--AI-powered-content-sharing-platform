@@ -72,7 +72,7 @@ const UploadSummary = ({
                 key={index} 
                 className="flex items-center gap-2 sm:gap-3 p-2.5 rounded-lg bg-zinc-800/50"
               >
-                <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-zinc-700 flex-shrink-0">
+                <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
                   <img 
                     src={file.preview} 
                     alt={file.name} 
@@ -97,7 +97,7 @@ const UploadSummary = ({
           </div>
         </div>
         
-        <div className="border-t border-white/10 pt-4">
+        <div className="border-t border-border pt-4">
           <h3 className="text-sm text-gray-400 mb-2 sm:mb-3">Image Details</h3>
           
           <div className="space-y-3">
@@ -134,7 +134,7 @@ const UploadSummary = ({
           </div>
         </div>
         
-        <div className="border-t border-white/10 pt-4">
+        <div className="border-t border-border pt-4">
           <h3 className="text-sm text-gray-400 mb-2 sm:mb-3">Publishing Settings</h3>
           
           <div className="space-y-2 sm:space-y-3">

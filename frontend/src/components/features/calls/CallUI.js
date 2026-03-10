@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, X } from "lucide-react";
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, X, Volume2, VolumeX } from "lucide-react";
 import Image from "next/image";
 import { useCall, CALL_STATUS } from "@/context/CallContext";
 import { useAuth } from "@/context/AuthContext";
@@ -143,6 +143,7 @@ export function VideoCallScreen() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
 
   // Set local video stream
   useEffect(() => {
@@ -154,14 +155,23 @@ export function VideoCallScreen() {
     }
   }, [localStream]);
 
-  // Set remote video stream
+  // Set remote video + audio stream
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStreams.size > 0) {
+    if (remoteStreams && remoteStreams.size > 0) {
       const [, stream] = Array.from(remoteStreams)[0];
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.play().catch((e) => {
-        console.warn("Remote video play failed:", e);
-      });
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch((e) => {
+          console.warn("Remote video play failed:", e);
+        });
+      }
+      // Also attach to dedicated audio element for guaranteed audio playback
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = stream;
+        remoteAudioRef.current.play().catch((e) => {
+          console.warn("Remote audio play failed:", e);
+        });
+      }
     }
   }, [remoteStreams]);
 
@@ -190,6 +200,9 @@ export function VideoCallScreen() {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-black"
     >
+      {/* Hidden audio element - ensures remote audio always plays regardless of video visibility */}
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+
       {/* Remote Video (Full Screen) */}
       <div className="absolute inset-0">
         <video
@@ -355,8 +368,34 @@ export function AudioCallScreen() {
     toggleMute,
     endCall,
     formatDuration,
+    remoteStreams,
   } = useCall();
   const { user: currentUser } = useAuth();
+
+  const remoteAudioRef = useRef(null);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+
+  // Attach remote audio stream to audio element
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStreams && remoteStreams.size > 0) {
+      const [, stream] = Array.from(remoteStreams)[0];
+      remoteAudioRef.current.srcObject = stream;
+      remoteAudioRef.current.muted = !isSpeakerOn;
+      remoteAudioRef.current.play().catch((e) => {
+        console.warn("Remote audio play failed:", e);
+      });
+    }
+  }, [remoteStreams, isSpeakerOn]);
+
+  const toggleSpeaker = () => {
+    setIsSpeakerOn(prev => {
+      const newVal = !prev;
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.muted = !newVal;
+      }
+      return newVal;
+    });
+  };
 
   // Only show for audio calls in active states
   if (
@@ -383,6 +422,9 @@ export function AudioCallScreen() {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-gradient-to-b from-purple-900 via-zinc-900 to-black"
     >
+      {/* Hidden audio element for remote audio */}
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -480,26 +522,20 @@ export function AudioCallScreen() {
             <PhoneOff className="w-7 h-7 text-white" />
           </motion.button>
 
-          {/* Speaker (placeholder) */}
+          {/* Speaker Toggle */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="p-5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            onClick={toggleSpeaker}
+            className={`p-5 rounded-full transition-colors ${
+              !isSpeakerOn ? "bg-red-500" : "bg-white/10 hover:bg-white/20"
+            }`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-7 h-7 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-              />
-            </svg>
+            {isSpeakerOn ? (
+              <Volume2 className="w-7 h-7 text-white" />
+            ) : (
+              <VolumeX className="w-7 h-7 text-white" />
+            )}
           </motion.button>
         </div>
       </div>

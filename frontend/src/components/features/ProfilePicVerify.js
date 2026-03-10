@@ -158,7 +158,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
         exit={{ opacity: 0 }}
       >
         <motion.div 
-          className="w-full max-w-xl bg-gray-900 rounded-3xl shadow-2xl p-8 relative overflow-hidden border border-gray-800"
+          className="w-full max-w-xl bg-card rounded-3xl shadow-2xl p-8 relative overflow-hidden border border-gray-800"
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", damping: 25 }}
@@ -170,7 +170,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
           <div className="absolute top-4 right-4 z-10">
             <motion.button 
               onClick={onClose} // Close the modal when the button is clicked
-              className='p-2 rounded-full hover:bg-gray-800/50 transition-colors text-gray-400 hover:text-gray-200'
+              className='p-2 rounded-full hover:bg-input transition-colors text-muted-foreground hover:text-gray-200'
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -219,7 +219,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
             </motion.div>
             <div className="ml-5">
               <h2 className='font-bold text-2xl mb-1 text-white bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent'>Choose Your Avatar</h2>
-              <p className="text-gray-400 text-sm">Pick a profile picture that represents you</p>
+              <p className="text-muted-foreground text-sm">Pick a profile picture that represents you</p>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
               </motion.div>
               <button 
                 onClick={() => setShowPreview(false)}
-                className="absolute top-6 right-6 text-white p-3 rounded-full bg-gray-800/70 hover:bg-gray-700"
+                className="absolute top-6 right-6 text-white p-3 rounded-full bg-input/70 hover:bg-secondary"
               >
                 <BiX size={24} />
               </button>
@@ -313,7 +313,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
             {activeTab === 'gallery' ? (
               <motion.div 
                 key="gallery"
-                className="mb-6 bg-gray-800/50 p-5 rounded-2xl backdrop-blur-sm"
+                className="mb-6 bg-input p-5 rounded-2xl backdrop-blur-sm"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -352,7 +352,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
                               setCurrentPic(pic);
                               togglePreview();
                             }}
-                            className="p-2 bg-gray-900/80 rounded-full hover:bg-indigo-600/80 transition-colors duration-300"
+                            className="p-2 bg-card/80 rounded-full hover:bg-indigo-600/80 transition-colors duration-300"
                             whileHover={{ scale: 1.1 }}
                           >
                             <FiZoomIn size={16} className="text-white" />
@@ -376,7 +376,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
             ) : (
               <motion.div 
                 key="custom"
-                className="mb-6 bg-gray-800/50 p-5 rounded-2xl backdrop-blur-sm"
+                className="mb-6 bg-input p-5 rounded-2xl backdrop-blur-sm"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -389,16 +389,16 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
                     <div className="flex space-x-2">
                       <div className="flex-1">
                         <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border ${
-                          customImageError ? 'border-red-500' : customImageUrl && isCustomImageValid ? 'border-green-500' : 'border-gray-700'
-                        } bg-gray-800 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-colors`}>
-                          <FiLink className="text-gray-400 flex-shrink-0" />
+                          customImageError ? 'border-red-500' : customImageUrl && isCustomImageValid ? 'border-green-500' : 'border-border'
+                        } bg-input focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-colors`}>
+                          <FiLink className="text-muted-foreground flex-shrink-0" />
                           <input
                             type="text"
                             id="imageUrl"
                             value={customImageUrl}
                             onChange={(e) => setCustomImageUrl(e.target.value)}
                             placeholder="https://example.com/image.jpg"
-                            className="flex-1 bg-transparent text-white text-sm placeholder-gray-500"
+                            className="flex-1 bg-transparent text-white text-sm placeholder:text-muted-foreground"
                             style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
                           />
                           {customImageUrl && !customImageError && isCustomImageValid && (
@@ -429,17 +429,17 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
                   </div>
                   
                   <div 
-                    className={`mt-4 border-2 border-dashed ${dragActive ? 'border-indigo-500 bg-indigo-900/20' : 'border-gray-700 bg-gray-800/30'} rounded-xl p-6 text-center transition-colors duration-300`}
+                    className={`mt-4 border-2 border-dashed ${dragActive ? 'border-indigo-500 bg-indigo-900/20' : 'border-border bg-input/30'} rounded-xl p-6 text-center transition-colors duration-300`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
                     <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className={`p-3 rounded-full ${dragActive ? 'bg-indigo-600/30' : 'bg-gray-700/30'}`}>
+                      <div className={`p-3 rounded-full ${dragActive ? 'bg-indigo-600/30' : 'bg-secondary/30'}`}>
                         <IoImageOutline size={24} className={`${dragActive ? 'text-indigo-300' : 'text-gray-400'}`} />
                       </div>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Drag and drop your image here or use the URL above.
                       </p>
                       <p className="text-xs text-gray-500">
@@ -494,7 +494,7 @@ const ProfilePicVerify = ({ isOpen, onClose = () => {} }) => {
                 setCustomImageError('');
               }} 
               type="button" 
-              className="flex-1 bg-gray-800 text-gray-300 border border-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-700 transition duration-300 flex items-center justify-center gap-2"
+              className="flex-1 bg-input text-gray-300 border border-border font-semibold py-3 px-4 rounded-xl hover:bg-secondary transition duration-300 flex items-center justify-center gap-2"
               whileHover={{ scale: 1.02, borderColor: "#6366f1" }}
               whileTap={{ scale: 0.98 }}
             >

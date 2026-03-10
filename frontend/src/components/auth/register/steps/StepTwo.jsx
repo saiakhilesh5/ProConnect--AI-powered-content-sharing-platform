@@ -22,7 +22,7 @@ export default function StepTwo({ formData, errors, handleChange }) {
           Password
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-purple-400 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-purple-400 transition-colors">
             <Lock className="w-5 h-5" />
           </div>
           <input
@@ -31,12 +31,12 @@ export default function StepTwo({ formData, errors, handleChange }) {
             type={showPassword ? "text" : "password"}
             value={formData.password}
             onChange={handleChange}
-            className="block w-full pl-12 pr-12 py-4 rounded-xl text-sm bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+            className="block w-full pl-12 pr-12 py-4 rounded-xl text-sm bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
             placeholder="••••••••"
           />
           <button
             type="button"
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-white transition-colors"
             onClick={togglePasswordVisibility}
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -54,7 +54,7 @@ export default function StepTwo({ formData, errors, handleChange }) {
             </motion.p>
           )}
         </AnimatePresence>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Password must be at least 6 characters long
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function StepTwo({ formData, errors, handleChange }) {
           Confirm Password
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-purple-400 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-purple-400 transition-colors">
             <Lock className="w-5 h-5" />
           </div>
           <input
@@ -74,12 +74,12 @@ export default function StepTwo({ formData, errors, handleChange }) {
             type={showConfirmPassword ? "text" : "password"}
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="block w-full pl-12 pr-12 py-4 rounded-xl text-sm bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+            className="block w-full pl-12 pr-12 py-4 rounded-xl text-sm bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
             placeholder="••••••••"
           />
           <button
             type="button"
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-white transition-colors"
             onClick={toggleConfirmPasswordVisibility}
           >
             {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -102,7 +102,7 @@ export default function StepTwo({ formData, errors, handleChange }) {
       {/* Password Strength Indicator - Visual feedback */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-300">Password Strength</label>
-        <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${!formData.password
               ? "w-0"
@@ -116,7 +116,7 @@ export default function StepTwo({ formData, errors, handleChange }) {
               }`}
           />
         </div>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-muted-foreground">
           {!formData.password
             ? "Enter a password"
             : formData.password.length < 6

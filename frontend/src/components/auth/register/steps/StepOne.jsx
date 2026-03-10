@@ -10,7 +10,7 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
           Full Name
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-purple-400 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-purple-400 transition-colors">
             <User className="w-5 h-5" />
           </div>
           <input
@@ -19,7 +19,7 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
             type="text"
             value={formData.fullName}
             onChange={handleChange}
-            className="block w-full pl-12 pr-4 py-4 rounded-xl text-sm bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+            className="block w-full pl-12 pr-4 py-4 rounded-xl text-sm bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
             placeholder="John Doe"
           />
         </div>
@@ -43,7 +43,7 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
           Email
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-purple-400 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-purple-400 transition-colors">
             <Mail className="w-5 h-5" />
           </div>
           <input
@@ -53,13 +53,13 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            className={`block w-full pl-12 pr-10 py-4 rounded-xl text-sm bg-gray-800/50 border ${
+            className={`block w-full pl-12 pr-10 py-4 rounded-xl text-sm bg-input border ${
               errors.email 
                 ? "border-red-500" 
                 : validationPassed.email 
                   ? "border-green-500" 
-                  : "border-gray-700"
-            } text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
+                  : "border-border"
+            } text-white placeholder:text-muted-foreground focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
             placeholder="your.email@example.com"
           />
           {validationPassed.email && !errors.email && (
@@ -93,7 +93,7 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
           Username
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-purple-400 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-purple-400 transition-colors">
             <AtSign className="w-5 h-5" />
           </div>
           <input
@@ -102,13 +102,13 @@ export default function StepOne({ formData, errors, validationPassed, handleChan
             type="text"
             value={formData.username}
             onChange={handleChange}
-            className={`block w-full pl-12 pr-10 py-4 rounded-xl text-sm bg-gray-800/50 border ${
+            className={`block w-full pl-12 pr-10 py-4 rounded-xl text-sm bg-input border ${
               errors.username 
                 ? "border-red-500" 
                 : validationPassed.username 
                   ? "border-green-500" 
-                  : "border-gray-700"
-            } text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
+                  : "border-border"
+            } text-white placeholder:text-muted-foreground focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
             placeholder="coolcreator"
           />
           {validationPassed.username && !errors.username && (

@@ -49,6 +49,8 @@ const InstagramProfileLayout = ({
     { id: 'reels', icon: Film, label: 'Reels' },
     { id: 'collections', icon: Bookmark, label: 'Saved' },
     ...(isOwnProfile ? [{ id: 'ai-insights', icon: Sparkles, label: 'AI Insights' }] : []),
+    { id: 'followers', icon: UserPlus, label: 'Followers' },
+    { id: 'following', icon: UserPlus, label: 'Following' },
   ];
 
   return (
@@ -157,11 +159,17 @@ const InstagramProfileLayout = ({
                 <span className="font-semibold">{formatNumber(profile.postsCount)}</span>
                 <span className="text-foreground"> posts</span>
               </div>
-              <button className="flex items-center gap-1 hover:opacity-70 transition-opacity">
+              <button
+                onClick={() => setActiveTab('followers')}
+                className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+              >
                 <span className="font-semibold">{formatNumber(profile.followersCount)}</span>
                 <span className="text-foreground"> followers</span>
               </button>
-              <button className="flex items-center gap-1 hover:opacity-70 transition-opacity">
+              <button
+                onClick={() => setActiveTab('following')}
+                className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+              >
                 <span className="font-semibold">{formatNumber(profile.followingCount)}</span>
                 <span className="text-foreground"> following</span>
               </button>
@@ -251,11 +259,11 @@ const InstagramProfileLayout = ({
             <p className="font-semibold">{formatNumber(profile.postsCount)}</p>
             <p className="text-xs text-muted-foreground">posts</p>
           </div>
-          <button className="text-center">
+          <button className="text-center" onClick={() => setActiveTab('followers')}>
             <p className="font-semibold">{formatNumber(profile.followersCount)}</p>
             <p className="text-xs text-muted-foreground">followers</p>
           </button>
-          <button className="text-center">
+          <button className="text-center" onClick={() => setActiveTab('following')}>
             <p className="font-semibold">{formatNumber(profile.followingCount)}</p>
             <p className="text-xs text-muted-foreground">following</p>
           </button>

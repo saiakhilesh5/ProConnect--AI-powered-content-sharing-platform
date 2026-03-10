@@ -99,15 +99,15 @@ const FeaturedCreators = () => {
           Array(3).fill(0).map((_, idx) => (
             <div key={idx} className="flex items-center justify-between p-2 animate-pulse">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-zinc-800"></div>
+                <div className="w-10 h-10 rounded-full bg-input"></div>
                 <div>
-                  <div className="h-4 w-24 bg-zinc-800 rounded mb-2"></div>
-                  <div className="h-3 w-16 bg-zinc-800 rounded"></div>
+                  <div className="h-4 w-24 bg-input rounded mb-2"></div>
+                  <div className="h-3 w-16 bg-input rounded"></div>
                 </div>
               </div>
               <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800"></div>
-                <div className="w-16 h-8 rounded-lg bg-zinc-800"></div>
+                <div className="w-8 h-8 rounded-lg bg-input"></div>
+                <div className="w-16 h-8 rounded-lg bg-input"></div>
               </div>
             </div>
           ))

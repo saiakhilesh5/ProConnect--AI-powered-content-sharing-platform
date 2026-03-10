@@ -21,11 +21,11 @@ const UsersTab = ({
               <div className="flex gap-3">
                 <div className="w-12 h-12 rounded-full bg-zinc-800"></div>
                 <div>
-                  <div className="h-5 w-32 bg-zinc-800 rounded mb-2"></div>
-                  <div className="h-4 w-24 bg-zinc-800 rounded"></div>
+                  <div className="h-5 w-32 bg-input rounded mb-2"></div>
+                  <div className="h-4 w-24 bg-input rounded"></div>
                 </div>
               </div>
-              <div className="h-8 w-20 bg-zinc-800 rounded"></div>
+              <div className="h-8 w-20 bg-input rounded"></div>
             </div>
           </div>
         ))

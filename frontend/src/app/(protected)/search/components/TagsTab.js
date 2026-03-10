@@ -9,7 +9,7 @@ const TagsTab = ({ loading, tagResults }) => {
       {loading ? (
         Array(6).fill(0).map((_, idx) => (
           <div key={idx} className="bg-card border border-border rounded-full px-4 py-3 animate-pulse">
-            <div className="h-5 w-3/4 bg-zinc-800 rounded-full"></div>
+            <div className="h-5 w-3/4 bg-input rounded-full"></div>
           </div>
         ))
       ) : tagResults.length > 0 ? (

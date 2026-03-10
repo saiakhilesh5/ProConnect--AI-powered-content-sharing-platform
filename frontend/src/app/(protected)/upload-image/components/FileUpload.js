@@ -85,7 +85,7 @@ const FileUpload = ({
         <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {files.map((file, index) => (
             <div key={index} className="relative group touch-manipulation">
-              <div className="aspect-square rounded-lg overflow-hidden bg-zinc-800 border border-white/10">
+              <div className="aspect-square rounded-lg overflow-hidden bg-input border border-border">
                 <img
                   src={file.preview}
                   alt={`Preview ${index + 1}`}

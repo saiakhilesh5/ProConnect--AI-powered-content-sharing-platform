@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ThumbsUp, MoreHorizontal, Reply, Edit, Trash2, X, Check, Loader2, AlertTriangle, Shield, Sparkles, Wand2 } from 'lucide-react';
+import { ThumbsUp, MoreHorizontal, Reply, Edit, Trash2, X, Check, Loader2, AlertTriangle, Shield, Sparkles, Wand2, Smile } from 'lucide-react';
+import EmojiPicker from 'emoji-picker-react';
 import { useApi } from '@/hooks/useApi';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
@@ -108,7 +109,7 @@ const CommentActions = ({
     };
   }, []);
 
-  const isOwner = user && comment.user._id === user._id;
+  const isOwner = user && comment.user._id?.toString() === user._id?.toString();
 
   if (!user) return null;
 
@@ -539,6 +540,8 @@ const CommentsSection = ({
   const [hasMore, setHasMore] = useState(true);
   const [totalComments, setTotalComments] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
   
   // Toxicity checking states
   const [toxicityScore, setToxicityScore] = useState(null);
@@ -599,6 +602,19 @@ const CommentsSection = ({
       }
     };
   }, []);
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
 
   // Fetch comments
   useEffect(() => {
@@ -792,18 +808,45 @@ const CommentsSection = ({
               </div>
             )}
             
-            <button 
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none ${
-                isToxic 
-                  ? 'bg-red-500/20 text-red-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500'
-              }`}
-              onClick={handlePostComment}
-              disabled={!commentText.trim() || submitting || isToxic}
-            >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {isToxic ? 'Cannot Post - Toxic Content' : 'Post Comment'}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Emoji Button */}
+              <div className="relative" ref={emojiPickerRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(prev => !prev)}
+                  className="p-2 text-gray-400 hover:text-yellow-400 transition-colors rounded-lg hover:bg-white/5"
+                  title="Add emoji"
+                >
+                  <Smile className="w-5 h-5" />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-10 left-0 z-50">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setCommentText(prev => prev + emojiData.emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      theme="dark"
+                      width={300}
+                      height={380}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <button 
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none ${
+                  isToxic 
+                    ? 'bg-red-500/20 text-red-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500'
+                }`}
+                onClick={handlePostComment}
+                disabled={!commentText.trim() || submitting || isToxic}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isToxic ? 'Cannot Post - Toxic Content' : 'Post Comment'}
+              </button>
+            </div>
           </div>
         </div>
       ) : (

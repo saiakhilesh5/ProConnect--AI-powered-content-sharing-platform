@@ -37,7 +37,7 @@ const CollectionGrid = ({
           <button 
             onClick={loadMoreCollections} 
             disabled={loadingMore}
-            className="flex items-center gap-2 bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-2 hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-2 bg-input border border-border rounded-lg px-4 py-2 hover:bg-secondary transition-colors"
           >
             {loadingMore ? (
               <>
@@ -57,3 +57,4 @@ const CollectionGrid = ({
 };
 
 export default CollectionGrid; 
+

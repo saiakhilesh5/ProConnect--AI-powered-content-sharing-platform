@@ -15,7 +15,7 @@ const UsersHeader = ({ searchQuery, setSearchQuery, filterOpen, setFilterOpen })
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-zinc-800/50 border border-white/10 w-full md:w-60 focus-within:ring-1 focus-within:ring-violet-500 transition">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-input border border-border w-full md:w-60 focus-within:ring-1 focus-within:ring-violet-500 transition">
             <Search className="text-muted-foreground w-4 h-4 flex-shrink-0" />
             <input 
               type="text"
@@ -30,7 +30,7 @@ const UsersHeader = ({ searchQuery, setSearchQuery, filterOpen, setFilterOpen })
           <div className="relative">
             <button 
               onClick={() => setFilterOpen(!filterOpen)} 
-              className="flex items-center gap-2 bg-zinc-800/50 border border-white/10 rounded-lg py-2 px-4 hover:bg-zinc-700/50 transition"
+              className="flex items-center gap-2 bg-input border border-border rounded-lg py-2 px-4 hover:bg-secondary/50 transition"
             >
               <Filter className="w-4 h-4" />
               <span className="text-sm">Filters</span>
@@ -38,7 +38,7 @@ const UsersHeader = ({ searchQuery, setSearchQuery, filterOpen, setFilterOpen })
             </button>
             
             {filterOpen && (
-              <div className="absolute right-0 mt-2 w-60 bg-zinc-800 border border-white/10 rounded-lg shadow-xl z-10">
+              <div className="absolute right-0 mt-2 w-60 bg-input border border-border rounded-lg shadow-xl z-10">
                 <div className="p-3">
                   <h3 className="text-sm font-medium mb-2">Filter by</h3>
                   <div className="space-y-2">
@@ -67,3 +67,5 @@ const UsersHeader = ({ searchQuery, setSearchQuery, filterOpen, setFilterOpen })
 };
 
 export default UsersHeader; 
+
+

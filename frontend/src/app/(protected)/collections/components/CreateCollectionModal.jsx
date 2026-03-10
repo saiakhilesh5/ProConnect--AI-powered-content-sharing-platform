@@ -19,7 +19,7 @@ const CreateCollectionModal = ({
             <label className="block text-sm text-gray-400 mb-1">Collection Name</label>
             <input 
               type="text" 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               placeholder="e.g. Abstract Art"
               value={newCollection.name}
               onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
@@ -29,7 +29,7 @@ const CreateCollectionModal = ({
           <div>
             <label className="block text-sm text-gray-400 mb-1">Description</label>
             <textarea 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-24"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-24"
               placeholder="What's this collection about?"
               value={newCollection.description}
               onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
@@ -40,7 +40,7 @@ const CreateCollectionModal = ({
             <label className="block text-sm text-gray-400 mb-1">Add Tags</label>
             <input 
               type="text" 
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full bg-input border border-border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
               placeholder="Separate tags with commas"
               value={newCollection.tags}
               onChange={(e) => setNewCollection({ ...newCollection, tags: e.target.value })}
@@ -68,7 +68,7 @@ const CreateCollectionModal = ({
           <div className="pt-4 flex justify-end gap-3">
             <button 
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+              className="px-4 py-2 rounded-lg bg-input hover:bg-secondary transition-colors"
             >
               Cancel
             </button>
@@ -86,3 +86,4 @@ const CreateCollectionModal = ({
 };
 
 export default CreateCollectionModal; 
+

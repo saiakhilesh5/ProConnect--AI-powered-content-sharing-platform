@@ -171,7 +171,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
         >
           <form onSubmit={handleSearchSubmit} className="relative">
             <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-card backdrop-blur-xl border border-border shadow-xl shadow-black/30 focus-within:ring-2 focus-within:ring-violet-500">
-              <Search className="text-gray-400 w-4 h-4 flex-shrink-0" />
+              <Search className="text-muted-foreground w-4 h-4 flex-shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -186,14 +186,14 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
               <div className="flex items-center space-x-2 flex-shrink-0">
                 <button
                   type="button"
-                  className="text-gray-400 hover:text-violet-400 transition-colors"
+                  className="text-muted-foreground hover:text-violet-400 transition-colors"
                   onClick={() => setActiveDropdown("searchFilters")}
                 >
                   <Filter className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-white transition-colors"
                   onClick={toggleSearch}
                 >
                   <X className="w-5 h-5" />
@@ -258,9 +258,9 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
                           <button
                             key={idx}
                             onClick={() => handleRecentSearchClick(search)}
-                            className="w-full flex items-center gap-3 p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-left"
+                            className="w-full flex items-center gap-3 p-2 hover:bg-input rounded-lg transition-colors text-left"
                           >
-                            <Clock className="w-4 h-4 text-gray-400" />
+                            <Clock className="w-4 h-4 text-muted-foreground" />
                             <span className="text-gray-300 text-sm">{search}</span>
                           </button>
                         ))}
@@ -280,7 +280,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
                           <button
                             key={idx}
                             onClick={() => handleTrendingSearchClick(trend.name)}
-                            className="w-full flex items-center gap-3 p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-left"
+                            className="w-full flex items-center gap-3 p-2 hover:bg-input rounded-lg transition-colors text-left"
                           >
                             <TrendingUp className="w-4 h-4 text-amber-400" />
                             <span className="text-gray-300 text-sm">#{trend.name}</span>
@@ -293,7 +293,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
 
                   {/* No results message */}
                   {!loading && suggestions.length === 0 && recentSearches.length === 0 && trendingSearches.length === 0 && searchQuery.trim() && (
-                    <div className="p-4 text-center text-gray-400">
+                    <div className="p-4 text-center text-muted-foreground">
                       <p>No results found for &quot;{searchQuery}&quot;</p>
                       <p className="text-sm mt-1">Try searching for something else</p>
                     </div>
@@ -301,7 +301,7 @@ const SearchBar = ({ searchActive, toggleSearch, setActiveDropdown, activeDropdo
 
                   {/* Loading state */}
                   {loading && (
-                    <div className="p-4 text-center text-gray-400">
+                    <div className="p-4 text-center text-muted-foreground">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500 mx-auto"></div>
                       <p className="mt-2 text-sm">Searching...</p>
                     </div>

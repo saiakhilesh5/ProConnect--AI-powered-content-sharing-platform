@@ -8,7 +8,7 @@ const TrendingSearches = ({
   onTrendingClick 
 }) => {
   return (
-    <div className="mt-12 pt-8 border-t border-white/10">
+    <div className="mt-12 pt-8 border-t border-border">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-medium flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-400" />
@@ -20,8 +20,8 @@ const TrendingSearches = ({
         {loading ? (
           Array(4).fill(0).map((_, idx) => (
             <div key={idx} className="bg-card border border-border rounded-xl p-4 animate-pulse">
-              <div className="h-5 w-3/4 bg-zinc-800 rounded mb-2"></div>
-              <div className="h-4 w-1/2 bg-zinc-800 rounded"></div>
+              <div className="h-5 w-3/4 bg-input rounded mb-2"></div>
+              <div className="h-4 w-1/2 bg-input rounded"></div>
             </div>
           ))
         ) : trendingSearches.length > 0 ? (

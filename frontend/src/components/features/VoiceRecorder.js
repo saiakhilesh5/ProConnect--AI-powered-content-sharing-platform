@@ -341,7 +341,7 @@ export function VoiceRecorder({ onSend, onCancel, maxDuration = 120 }) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="flex items-center gap-3 w-full bg-zinc-800/50 p-2 rounded-xl"
+            className="flex items-center gap-3 w-full bg-input p-2 rounded-xl"
           >
             {/* Cancel button */}
             <button
@@ -377,7 +377,7 @@ export function VoiceRecorder({ onSend, onCancel, maxDuration = 120 }) {
               {/* Pause button */}
               <button
                 onClick={togglePause}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded-full transition-colors"
+                className="p-2 text-muted-foreground hover:text-white hover:bg-secondary rounded-full transition-colors"
               >
                 {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
               </button>
@@ -399,7 +399,7 @@ export function VoiceRecorder({ onSend, onCancel, maxDuration = 120 }) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="flex items-center gap-3 w-full bg-zinc-800/50 p-2 rounded-xl"
+            className="flex items-center gap-3 w-full bg-input p-2 rounded-xl"
           >
             {/* Delete button */}
             <button
@@ -412,7 +412,7 @@ export function VoiceRecorder({ onSend, onCancel, maxDuration = 120 }) {
             {/* Play/Pause button */}
             <button
               onClick={togglePlayback}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded-full transition-colors"
+              className="p-2 text-muted-foreground hover:text-white hover:bg-secondary rounded-full transition-colors"
             >
               {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
             </button>
@@ -428,7 +428,7 @@ export function VoiceRecorder({ onSend, onCancel, maxDuration = 120 }) {
             </div>
             
             {/* Duration */}
-            <span className="text-sm text-zinc-400 font-mono min-w-[40px]">
+            <span className="text-sm text-muted-foreground font-mono min-w-[40px]">
               {formatTime(isPlaying ? playbackTime : duration)}
             </span>
             
@@ -531,3 +531,4 @@ export function VoiceMessagePlayer({ voiceUrl, duration, className = '' }) {
 }
 
 export default VoiceRecorder;
+

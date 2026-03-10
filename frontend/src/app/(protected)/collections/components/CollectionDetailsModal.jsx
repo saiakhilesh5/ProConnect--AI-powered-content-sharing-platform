@@ -58,7 +58,7 @@ const CollectionDetailsModal = ({
           
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({length: Math.min(6, collection.imageCount || 0)}).map((_, index) => (
-              <div key={index} className="aspect-square rounded-lg overflow-hidden bg-zinc-800 relative group">
+              <div key={index} className="aspect-square rounded-lg overflow-hidden bg-input relative group">
                 <img 
                   src={`/api/placeholder/${400 + index}/${400 + index}`} 
                   alt="Collection image" 
@@ -98,3 +98,4 @@ const CollectionDetailsModal = ({
 };
 
 export default CollectionDetailsModal; 
+

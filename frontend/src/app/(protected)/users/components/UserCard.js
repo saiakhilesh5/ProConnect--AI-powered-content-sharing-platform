@@ -10,7 +10,7 @@ const UserCard = ({ user, isFollowing, handleFollowToggle, followLoading }) => {
         <div className="flex gap-3">
           <div className="relative">
             <Link href={`/profile/${user.username}`} className="block">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-violet-500 transition-colors cursor-pointer hover:ring-2 hover:ring-violet-500/50">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border group-hover:border-violet-500 transition-colors cursor-pointer hover:ring-2 hover:ring-violet-500/50">
                 <img src={user.profilePicture || "/images/default-profile.jpg"} alt={user.fullName} className="w-full h-full object-cover" />
               </div>
             </Link>
@@ -50,12 +50,12 @@ const UserCard = ({ user, isFollowing, handleFollowToggle, followLoading }) => {
             className={`text-xs font-medium py-1.5 px-3 rounded-lg transition-colors ${
               isFollowing(user._id)
                 ? 'bg-violet-500 hover:bg-violet-600 text-white'
-                : 'bg-white/5 hover:bg-white/10 text-white'
+                : 'bg-secondary hover:bg-secondary-hover text-foreground'
             }`}
           >
             {isFollowing(user._id) ? 'Following' : 'Follow'}
           </button>
-          <Link href={`/profile/${user.username}`} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+          <Link href={`/profile/${user.username}`} className="p-1.5 rounded-lg bg-secondary hover:bg-secondary-hover transition-colors">
             <MessageCircle className="w-4 h-4" />
           </Link>
         </div>
