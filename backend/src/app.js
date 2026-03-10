@@ -18,6 +18,9 @@ import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
+// ─── Trust proxy (required for Render/Heroku/Railway reverse proxies) ─────────
+app.set('trust proxy', 1);
+
 // ─── Security headers (XSS, clickjacking, MIME sniffing, etc.) ────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
