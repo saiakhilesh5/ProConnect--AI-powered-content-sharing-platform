@@ -11,6 +11,11 @@ const getKeys = () => [
   process.env.GEMINI_API_KEY_1,
   process.env.GEMINI_API_KEY_2,
   process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+  process.env.GEMINI_API_KEY_5,
+  process.env.GEMINI_API_KEY_6,
+  process.env.GEMINI_API_KEY_7,
+  process.env.GEMINI_API_KEY_8,
 ].filter(Boolean);
 
 let currentKeyIndex = 0;
@@ -41,7 +46,8 @@ export const createChatCompletion = async (params) => {
 
     try {
       const result = await client.chat.completions.create(params);
-      currentKeyIndex = keyIndex; // stick with the working key
+      // Round-robin: advance to next key for equal distribution
+      currentKeyIndex = (keyIndex + 1) % keys.length;
       return result;
     } catch (error) {
       const status = error?.status || error?.response?.status;
