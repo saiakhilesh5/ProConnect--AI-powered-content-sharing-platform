@@ -53,7 +53,7 @@ const fetchImageAsBase64 = async (imageUrl) => {
 };
 
 /**
- * Use Gemini AI to analyze image similarity
+ * Use Grok AI to analyze image similarity
  * @param {string} imageUrl - URL of uploaded image
  * @param {string[]} existingImageUrls - URLs of existing images to compare
  * @returns {Object} - Similarity analysis result

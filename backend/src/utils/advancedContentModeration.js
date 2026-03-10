@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 /**
  * Advanced Multilingual Content Moderation
- * Uses Gemini AI for comprehensive text analysis across all languages
+ * Uses Grok AI for comprehensive text analysis across all languages
  * Replaces Perspective API with more powerful multilingual detection
  */
 
@@ -295,11 +295,11 @@ export const checkBadWords = (text) => {
 };
 
 // ============================================================================
-// GEMINI-BASED CONTENT MODERATION
+// GROK-BASED CONTENT MODERATION
 // ============================================================================
 
 /**
- * Advanced content moderation using Gemini AI
+ * Advanced content moderation using Grok AI
  * Analyzes text for toxicity, hate speech, violence, sexual content
  * Works across 50+ languages automatically
  * 

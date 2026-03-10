@@ -19,7 +19,7 @@ const fetchImageAsBase64 = async (imageUrl) => {
 };
 
 /**
- * Analyze an image using Google Gemini Vision API and generate metadata
+ * Analyze an image using Grok Vision API and generate metadata
  * @param {string} imageUrl - The URL of the image to analyze
  * @returns {Object} - Generated caption, tags, category, and alt text
  */
@@ -86,7 +86,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
       
       const analysis = JSON.parse(jsonStr.trim());
       
-      console.log('Parsed Gemini analysis:', analysis);
+      console.log('Parsed Grok analysis:', analysis);
       
       // Validate and sanitize the response
       return {
@@ -98,7 +98,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
         aiGenerated: true
       };
     } catch (parseError) {
-      console.error('Failed to parse Gemini response:', parseError);
+      console.error('Failed to parse Grok response:', parseError);
       console.error('Raw content:', content);
       return getFallbackAnalysis();
     }

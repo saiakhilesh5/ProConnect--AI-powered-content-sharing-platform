@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useReels } from "@/context/ReelsContext";
 import {
   Upload,
@@ -71,9 +72,11 @@ const musicTracks = [
 
 export default function UploadReelPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { uploadReel, analyzeReelWithAI, loading } = useReels();
   const videoInputRef = useRef(null);
   const videoPreviewRef = useRef(null);
+  const hiddenVideoRef = useRef(null);
   const cameraStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
@@ -316,41 +319,96 @@ export default function UploadReelPage() {
 
     setAiLoading(true);
     try {
-      // Since the video isn't uploaded to Cloudinary yet, use mock AI suggestions
-      // (a real implementation would upload the video first, then call /api/reels/analyze)
       toast.loading("AI is analyzing your reel...", { id: "ai-analysis" });
 
-      // Simulate AI analysis (in prod, this would call the backend with the thumbnail)
-      const mockSuggestions = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            suggestions: {
-              caption: "Check out this amazing content! ✨ Drop a like if you agree! 🔥",
-              hashtags: ["fyp", "viral", "trending", "foryou", "explore", "reels", "content"],
-              category: "entertainment",
-              tags: ["creative", "fun", "original"],
-              musicMood: "upbeat",
-              aiGenerated: true,
-            },
-            moderation: { safe: true, confidence: 0.95 }
-          });
-        }, 1500);
+      // Step 1: Capture a frame from the video for AI analysis
+      const video = hiddenVideoRef.current;
+      const canvas = canvasRef.current;
+
+      if (!video || !canvas) {
+        throw new Error("Video not ready. Please wait a moment and try again.");
+      }
+
+      // Seek to a good frame (2 seconds in or midpoint)
+      video.currentTime = Math.min(2, videoDuration / 2);
+      await new Promise((resolve) => {
+        video.onseeked = resolve;
+        setTimeout(resolve, 1000); // Fallback timeout
       });
 
-      setAiSuggestions(mockSuggestions.suggestions);
-      
-      // Auto-fill the form with AI suggestions
-      setFormData((prev) => ({
-        ...prev,
-        caption: mockSuggestions.suggestions.caption || prev.caption,
-        category: mockSuggestions.suggestions.category || prev.category,
-        tags: mockSuggestions.suggestions.hashtags?.join(", ") || prev.tags,
-      }));
+      canvas.width = video.videoWidth || 720;
+      canvas.height = video.videoHeight || 1280;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      toast.success("AI filled in the details!", { id: "ai-analysis" });
+      // Step 2: Convert canvas to blob and upload to Cloudinary as temp image
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(resolve, "image/jpeg", 0.85);
+      });
+
+      if (!blob) {
+        throw new Error("Failed to capture video frame");
+      }
+
+      const formData = new FormData();
+      formData.append("image", blob, "reel-thumbnail.jpg");
+
+      const token = session?.backendToken;
+      if (!token) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+
+      const uploadRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8000"}/api/images/upload-temp`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+          body: formData,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to upload thumbnail for analysis");
+      }
+
+      const uploadData = await uploadRes.json();
+      const thumbnailUrl = uploadData.data.imageUrl;
+
+      // Step 3: Call the real AI analyze endpoint
+      const result = await analyzeReelWithAI(thumbnailUrl, thumbnailUrl);
+
+      if (result?.suggestions) {
+        setAiSuggestions(result.suggestions);
+
+        // Auto-fill the form with real AI suggestions
+        setFormData((prev) => ({
+          ...prev,
+          caption: result.suggestions.caption || prev.caption,
+          category: result.suggestions.category || prev.category,
+          tags: result.suggestions.hashtags?.join(", ") || prev.tags,
+        }));
+
+        toast.success("AI filled in the details!", { id: "ai-analysis" });
+      } else {
+        toast.error("AI couldn't analyze the reel. Please fill manually.", { id: "ai-analysis" });
+      }
+
+      // Clean up the temp thumbnail from Cloudinary
+      if (uploadData.data.publicId) {
+        fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8000"}/api/images/cloudinary/${uploadData.data.publicId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include",
+          }
+        ).catch(() => {}); // Fire and forget cleanup
+      }
     } catch (error) {
       console.error("AI analysis error:", error);
-      toast.error("AI analysis failed. Please fill manually.", { id: "ai-analysis" });
+      toast.error(error.message || "AI analysis failed. Please fill manually.", { id: "ai-analysis" });
     } finally {
       setAiLoading(false);
     }
@@ -412,6 +470,17 @@ export default function UploadReelPage() {
     <div className="min-h-screen bg-background">
       {/* Hidden canvas for cover image capture */}
       <canvas ref={canvasRef} className="hidden" />
+      {/* Hidden video element for AI frame capture (always mounted) */}
+      {videoPreview && (
+        <video
+          ref={hiddenVideoRef}
+          src={videoPreview}
+          className="hidden"
+          preload="auto"
+          muted
+          playsInline
+        />
+      )}
 
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">

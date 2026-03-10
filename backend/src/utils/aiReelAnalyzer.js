@@ -63,7 +63,7 @@ const fetchImageAsBase64 = async (imageUrl) => {
 };
 
 /**
- * Analyze a video/reel using Gemini Vision API and generate metadata
+ * Analyze a video/reel using Grok Vision API and generate metadata
  * @param {string} videoUrl - Cloudinary video URL
  * @param {string} thumbnailUrl - Video thumbnail URL
  * @returns {Object} - Generated caption, hashtags, category, etc.

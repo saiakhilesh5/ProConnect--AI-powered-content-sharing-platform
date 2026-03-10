@@ -1,6 +1,6 @@
 /**
  * Content Moderation Utility
- * Uses Gemini AI for text moderation
+ * Uses Grok AI for text moderation
  * Uses image analysis for NSFW detection
  * Includes smart filter for transliterated profanity with fuzzy matching
  */
@@ -230,7 +230,7 @@ const getReasonMessage = (attribute) => {
 };
 
 /**
- * Moderate image for NSFW content using Gemini Vision
+ * Moderate image for NSFW content using Grok Vision
  * @param {string} imageUrl - URL of the image to check
  * @returns {Object} - Moderation result
  */

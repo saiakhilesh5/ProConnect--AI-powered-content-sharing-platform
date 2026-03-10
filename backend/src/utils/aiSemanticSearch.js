@@ -4,7 +4,7 @@ import { Image } from '../models/image.model.js';
 /**
  * AI Semantic Image Search Utility
  * Allows natural language queries to find relevant images
- * Uses Gemini AI for query understanding and semantic matching
+ * Uses Grok AI for query understanding and semantic matching
  */
 
 /**
