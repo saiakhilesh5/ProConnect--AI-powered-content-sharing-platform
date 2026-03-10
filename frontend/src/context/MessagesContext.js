@@ -160,9 +160,19 @@ export const MessagesProvider = ({ children }) => {
     socket.on('message:new', handleNewMessage);
     socket.on('user:typing', handleTyping);
 
+    // Re-fetch messages when socket reconnects (in case messages were missed during disconnect)
+    const handleReconnect = () => {
+      if (activeConversationRef.current) {
+        fetchMessages(activeConversationRef.current._id, 1);
+      }
+      fetchConversations();
+    };
+    socket.on('connect', handleReconnect);
+
     return () => {
       socket.off('message:new', handleNewMessage);
       socket.off('user:typing', handleTyping);
+      socket.off('connect', handleReconnect);
     };
   }, [socket]);
 
@@ -1082,13 +1092,13 @@ export const MessagesProvider = ({ children }) => {
   useEffect(() => {
     if (!hasValidSession || !isMessagesPage) return;
     
-    // Message polling (30 seconds)
+    // Message polling at 8s as fallback when socket event is missed
     const messageInterval = setInterval(() => {
       fetchUnreadCount();
       if (activeConversation) {
         fetchMessages(activeConversation._id, 1);
       }
-    }, 30000);
+    }, 8000);
     
     // Typing status polling (2 seconds) - only when conversation is active
     if (activeConversation) {

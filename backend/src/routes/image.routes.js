@@ -32,7 +32,8 @@ import {
   getSmartFeedImages,
   getForYouImages,
   storyLike,
-  storyReply
+  storyReply,
+  getStories
 } from "../controllers/image.controllers.js";
 import { authenticateUser } from "../middlewares/auth.middleware.js";
 import upload from "../config/multer.js";
@@ -46,6 +47,9 @@ router.get("/semantic-search", authenticateUser, semanticImageSearch);
 router.get("/search-suggestions", authenticateUser, getImageSearchSuggestions);
 router.post("/check-copyright", authenticateUser, checkImageCopyright);
 router.post("/find-similar", authenticateUser, findSimilar);
+
+// Stories
+router.get("/stories", authenticateUser, getStories);
 
 // All routes now require authentication
 router.get("/public", authenticateUser, getAllImages);

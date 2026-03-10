@@ -13,6 +13,7 @@ export class WebRTCService {
     this.peerConnections = new Map(); // Map of userId -> RTCPeerConnection
     this.localStream = null;
     this.remoteStreams = new Map(); // Map of userId -> MediaStream
+    this.pendingCandidates = new Map(); // Map of userId -> RTCIceCandidate[] (queued before remote desc)
     this.onRemoteStreamCallback = null;
     this.onRemoteStreamRemovedCallback = null;
     this.onIceCandidateCallback = null;
@@ -127,6 +128,9 @@ export class WebRTCService {
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       
+      // Drain any ICE candidates that arrived before remote description was set
+      await this._drainPendingCandidates(userId, peerConnection);
+      
       return answer;
     } catch (error) {
       console.error('Error creating answer:', error);
@@ -145,18 +149,25 @@ export class WebRTCService {
 
     try {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      
+      // Drain any ICE candidates that arrived before remote description was set
+      await this._drainPendingCandidates(userId, peerConnection);
     } catch (error) {
       console.error('Error handling answer:', error);
       throw error;
     }
   }
 
-  // Handle received ICE candidate
+  // Handle received ICE candidate — queue if remote description not yet set
   async handleIceCandidate(userId, candidate) {
     const peerConnection = this.peerConnections.get(userId);
     
-    if (!peerConnection) {
-      console.error('No peer connection found for:', userId);
+    if (!peerConnection || !peerConnection.remoteDescription) {
+      // Queue for later — remote description hasn't been set yet
+      if (!this.pendingCandidates.has(userId)) {
+        this.pendingCandidates.set(userId, []);
+      }
+      this.pendingCandidates.get(userId).push(candidate);
       return;
     }
 
@@ -164,6 +175,19 @@ export class WebRTCService {
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (error) {
       console.error('Error handling ICE candidate:', error);
+    }
+  }
+
+  // Drain queued ICE candidates after remote description is set
+  async _drainPendingCandidates(userId, peerConnection) {
+    const pending = this.pendingCandidates.get(userId) || [];
+    this.pendingCandidates.delete(userId);
+    for (const candidate of pending) {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.error('Error adding queued ICE candidate:', e);
+      }
     }
   }
 
@@ -236,6 +260,7 @@ export class WebRTCService {
     }
     
     this.remoteStreams.delete(userId);
+    this.pendingCandidates.delete(userId);
   }
 
   // Close all connections and cleanup
@@ -252,6 +277,7 @@ export class WebRTCService {
     });
     this.peerConnections.clear();
     this.remoteStreams.clear();
+    this.pendingCandidates.clear();
   }
 
   // Set callbacks

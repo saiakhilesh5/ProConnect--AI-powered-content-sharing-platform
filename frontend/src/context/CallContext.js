@@ -59,6 +59,12 @@ export const CallProvider = ({ children }) => {
   const webRTCRef = useRef(null);
   const durationIntervalRef = useRef(null);
   const ringtoneRef = useRef(null);
+  const currentCallRef = useRef(null); // Always holds the latest currentCall to avoid stale closures
+
+  // Keep ref in sync with currentCall state
+  useEffect(() => {
+    currentCallRef.current = currentCall;
+  }, [currentCall]);
 
   // Initialize WebRTC service
   useEffect(() => {
@@ -269,11 +275,12 @@ export const CallProvider = ({ children }) => {
     socket.on("webrtc:ice-candidate", handleICECandidate);
     socket.on("call:error", handleCallError);
 
-    // Set up ICE candidate callback
+    // Set up ICE candidate callback — use ref to avoid stale closure
     webRTCRef.current.onIceCandidate((userId, candidate) => {
-      if (currentCall?._id) {
+      const callId = currentCallRef.current?._id;
+      if (callId) {
         socket.emit("webrtc:ice-candidate", {
-          callId: currentCall._id,
+          callId,
           targetUserId: userId,
           candidate,
         });

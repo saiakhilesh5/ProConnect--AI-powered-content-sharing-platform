@@ -22,6 +22,7 @@ const ImageUpload = () => {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const initialCollectionId = searchParams.get('collection');
+  const isStoryUpload = searchParams.get('type') === 'story';
   
   const [files, setFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
@@ -318,7 +319,7 @@ const ImageUpload = () => {
         throw new Error("Please select at least one image");
       }
 
-      if (!imageDetails.title || !imageDetails.description) {
+      if (!isStoryUpload && (!imageDetails.title || !imageDetails.description)) {
         throw new Error("Title and description are required");
       }
 
@@ -341,7 +342,8 @@ const ImageUpload = () => {
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         altText: altText || undefined,
         aiGenerated: aiGenerated,
-        collectionId: selectedCollectionId
+        collectionId: selectedCollectionId,
+        isStory: isStoryUpload,
       };
 
       try {
@@ -389,7 +391,7 @@ const ImageUpload = () => {
   const handleNextStep = () => {
     if (currentStep < 4) {
       // Add validation for step 2
-      if (currentStep === 2 && (!imageDetails.title.trim() || !imageDetails.description.trim())) {
+      if (currentStep === 2 && !isStoryUpload && (!imageDetails.title.trim() || !imageDetails.description.trim())) {
         // Show error or validation message
         setUploadError("Please provide both title and description before continuing");
         return;

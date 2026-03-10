@@ -269,7 +269,7 @@ const CollectionDetailPage = () => {
             {/* Collection info */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">{collection.name}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{collection.name}</h1>
                 {/* Visibility indicator */}
                 <div className={`p-2 rounded-lg ${collection.visibility === "private"
                     ? "bg-amber-500/20 border border-amber-500/30"
@@ -283,12 +283,12 @@ const CollectionDetailPage = () => {
                 </div>
               </div>
 
-              <p className="text-zinc-400 text-sm md:text-base mb-4">
+              <p className="text-muted-foreground text-sm md:text-base mb-4">
                 {collection.description || "No description provided for this collection."}
               </p>
 
               {/* Collection stats */}
-              <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Image className="w-4 h-4" />
                   <span>{images.length} Images</span>

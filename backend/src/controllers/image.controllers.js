@@ -915,6 +915,45 @@ export const deleteCloudinaryImage = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc Get stories from followed users + self (non-expired, within 24h)
+ * @route GET /api/images/stories
+ * @access Private
+ */
+export const getStories = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const following = await Follow.find({ follower: userId }).select('following');
+  const followingIds = [...following.map(f => f.following), userId];
+  const now = new Date();
+
+  const stories = await Image.find({
+    user: { $in: followingIds },
+    isStory: true,
+    $or: [{ expiresAt: { $gt: now } }, { expiresAt: null }],
+  })
+    .populate('user', 'username profilePicture fullName')
+    .sort({ createdAt: -1 })
+    .limit(100);
+
+  // Group by user
+  const grouped = [];
+  const seen = new Set();
+  stories.forEach(story => {
+    const uid = story.user._id.toString();
+    if (!seen.has(uid)) {
+      seen.add(uid);
+      grouped.push({
+        _id: uid,
+        user: story.user,
+        images: stories.filter(s => s.user._id.toString() === uid),
+        viewed: false,
+      });
+    }
+  });
+
+  res.status(200).json(new ApiResponse(200, "Stories fetched successfully", grouped));
+});
+
+/**
  * @desc Save image details after temporary upload
  * @route POST /api/images/save-details
  * @access Private
@@ -933,9 +972,10 @@ export const saveImageDetails = asyncHandler(async (req, res) => {
     commentsAllowed,
     altText,
     aiGenerated,
+    isStory,
   } = req.body;
 
-  if (!publicId || !imageUrl || !title || !description) {
+  if (!publicId || !imageUrl || (!isStory && (!title || !description))) {
     throw new ApiError(400, "Missing required image information");
   }
 
@@ -955,8 +995,8 @@ export const saveImageDetails = asyncHandler(async (req, res) => {
   // Create the image record in the database
   const image = await Image.create({
     user: req.user._id,
-    title,
-    description,
+    title: isStory ? (title || 'Story') : title,
+    description: isStory ? (description || 'Story') : description,
     imageUrl,
     publicId,
     category: category || 'other',
@@ -967,14 +1007,22 @@ export const saveImageDetails = asyncHandler(async (req, res) => {
     visibility: visibility || 'public',
     altText: altText || '',
     aiGenerated: aiGenerated || false,
+    isStory: !!isStory,
+    expiresAt: isStory ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
   });
 
-  await User.findByIdAndUpdate(req.user._id, { 
-    $inc: { 
-      postsCount: 1, 
-      storageUsed: imageSize // Increment storage used by the image size
-    } 
-  });
+  if (!isStory) {
+    await User.findByIdAndUpdate(req.user._id, { 
+      $inc: { 
+        postsCount: 1, 
+        storageUsed: imageSize // Increment storage used by the image size
+      } 
+    });
+  } else {
+    await User.findByIdAndUpdate(req.user._id, { 
+      $inc: { storageUsed: imageSize } 
+    });
+  }
 
   // Update user badge after post count change
   await updateUserBadge(req.user._id);

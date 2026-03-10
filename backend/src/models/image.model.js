@@ -110,6 +110,14 @@ const imageSchema = new Schema(
       type: Boolean,
       default: false, // Whether copyright was checked on upload
     },
+    isStory: {
+      type: Boolean,
+      default: false,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true, // Automatically handle createdAt and updatedAt fields

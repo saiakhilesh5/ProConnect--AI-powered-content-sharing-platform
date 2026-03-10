@@ -323,11 +323,16 @@ const InstagramFeed = () => {
     }
   }, [api]);
 
-  // Fetch Stories - placeholder until a real story backend is built
+  // Fetch Stories from backend
   const fetchStories = useCallback(async () => {
-    // Stories use a dedicated story model; posts are not stories.
-    setStories([]);
-  }, []);
+    try {
+      const response = await api.get('/api/images/stories');
+      setStories(response.data?.data || []);
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+      setStories([]);
+    }
+  }, [api]);
 
   // Fetch Suggestions
   const fetchSuggestions = useCallback(async () => {
@@ -362,12 +367,23 @@ const InstagramFeed = () => {
     }
   };
 
-  // Follow handler
+  // Follow handler — remove followed user from suggestions list so the button
+  // can't reset to "Follow" when navigating away and back
   const handleFollow = async (userId) => {
+    // Optimistically remove from both suggestion lists
+    setSuggestions(prev => prev.filter(s => s._id !== userId));
+    setAllSuggestions(prev => prev.filter(s => s._id !== userId));
     try {
       await api.post(`/api/follow/${userId}`);
     } catch (error) {
       console.error('Error following user:', error);
+      // Re-fetch suggestions to restore list on failure
+      try {
+        const res = await api.get('/api/users/suggestions?limit=10');
+        const data = res.data.data || [];
+        setSuggestions(data);
+        setAllSuggestions(data);
+      } catch (_) {}
     }
   };
 
@@ -457,7 +473,7 @@ const InstagramFeed = () => {
 
   // Handle Add Story
   const handleAddStory = () => {
-    window.location.href = '/upload-image';
+    window.location.href = '/upload-image?type=story';
   };
 
   // Load More Posts Handler
