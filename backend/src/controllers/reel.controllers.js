@@ -12,6 +12,7 @@ import cloudinary from "../config/cloudinary.js";
 import { updateUserBadge } from "../utils/userUpdates.js";
 import { analyzeReel, moderateReelContent } from "../utils/aiReelAnalyzer.js";
 import { moderateComment, addUserWarning } from "../utils/contentModeration.js";
+import { moderateCaption } from "../utils/advancedContentModeration.js";
 import { getSmartReelFeed, recordReelInteraction } from "../utils/aiSmartReelRanking.js";
 
 /**
