@@ -1,8 +1,8 @@
 /**
  * Content Moderation Utility
- * Uses Grok AI for text moderation
+ * Uses Gemini AI for context-aware text moderation
  * Uses image analysis for NSFW detection
- * Includes smart filter for transliterated profanity with fuzzy matching
+ * Supports multilingual content understanding
  */
 
 import { createChatCompletion, hasAIKeys } from './aiClient.js';
@@ -132,17 +132,6 @@ const checkCustomBadWords = (text) => {
  */
 export const moderateComment = async (text) => {
   try {
-    // First check custom bad words filter (catches transliterated abuse)
-    const customCheck = checkCustomBadWords(text);
-    if (customCheck.hasBadWords) {
-      console.log('Custom filter caught bad word:', customCheck.matchedWord);
-      return { 
-        safe: false, 
-        scores: { TOXICITY: 1.0, PROFANITY: 1.0 }, 
-        reason: 'profane language' 
-      };
-    }
-
     if (!hasAIKeys()) {
       console.warn('AI keys not configured, skipping moderation');
       return { safe: true, scores: {}, reason: null };
@@ -152,21 +141,29 @@ export const moderateComment = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const prompt = `You are a content moderation AI. Analyze this text for harmful content.
+    const prompt = `You are a content moderation AI for a social media platform. Analyze this text for harmful content.
 
 TEXT: "${text}"
 
+IMPORTANT CONTEXT RULES:
+- This could be an AI-generated caption, creative writing, poetry, or normal conversation
+- DO NOT flag creative, poetic, or descriptive language as toxic
+- DO NOT flag text just because it mentions emotions, darkness, beauty, love, or nature
+- ONLY flag genuinely harmful content: real profanity, slurs, threats, hate speech, sexual content
+- Understand context: "fire" in "this photo is fire" is slang for good, not a threat
+- Understand multilingual content: detect actual abuse in ANY language (Hindi, Telugu, Tamil, Spanish, etc.)
+- Detect transliterated profanity (written in English but meaning abuse in other languages)
+- Be context-aware: "badass" in captions is acceptable slang, not profanity
+
 Score each category from 0.0 to 1.0:
-- TOXICITY: rude/disrespectful content
+- TOXICITY: genuinely rude/hateful content (NOT creative language)
 - SEVERE_TOXICITY: extremely hateful content
 - IDENTITY_ATTACK: attacks based on race, religion, gender, nationality
-- INSULT: personal attacks or name-calling
-- PROFANITY: obscene language in any language (including transliterated)
-- THREAT: threats of violence or harm
-- SEXUALLY_EXPLICIT: sexual content or innuendo
+- INSULT: direct personal attacks or slurs
+- PROFANITY: actual swear words/obscene language in any language
+- THREAT: real threats of violence or harm
+- SEXUALLY_EXPLICIT: explicit sexual content
 - SPAM: unsolicited promotional content
-
-Detect profanity in ALL languages including transliterated forms and leetspeak.
 
 Respond ONLY with valid JSON (no markdown):
 {"safe":true,"scores":{"TOXICITY":0.0,"SEVERE_TOXICITY":0.0,"IDENTITY_ATTACK":0.0,"INSULT":0.0,"PROFANITY":0.0,"THREAT":0.0,"SEXUALLY_EXPLICIT":0.0,"SPAM":0.0},"reason":null}`;
@@ -180,7 +177,7 @@ Respond ONLY with valid JSON (no markdown):
     const data = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
     const scores = data.scores || {};
-    console.log('Grok moderation scores:', scores);
+    console.log('Gemini moderation scores:', scores);
 
     const THRESHOLDS = {
       TOXICITY: 0.7,

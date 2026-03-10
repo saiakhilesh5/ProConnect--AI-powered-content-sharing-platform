@@ -2,8 +2,8 @@ import { createChatCompletion, hasAIKeys } from './aiClient.js';
 
 /**
  * Advanced Multilingual Content Moderation
- * Uses Grok AI for comprehensive text analysis across all languages
- * Replaces Perspective API with more powerful multilingual detection
+ * Uses Gemini AI for comprehensive context-aware text analysis across all languages
+ * Gemini understands context, creative language, and multilingual content natively
  */
 
 // ============================================================================
@@ -308,20 +308,7 @@ export const checkBadWords = (text) => {
  */
 export const moderateText = async (text) => {
   try {
-    // First: Quick local check for obvious bad words
-    const localCheck = checkBadWords(text);
-    if (localCheck.detected) {
-      console.log('Local filter detected:', localCheck.word);
-      return {
-        safe: false,
-        scores: { PROFANITY: 1.0, TOXICITY: 1.0 },
-        reason: 'profane language',
-        detectedWord: localCheck.word,
-        method: 'local'
-      };
-    }
-
-    // Second: AI analysis for complex cases
+    // Use Gemini AI for context-aware moderation (understands all languages natively)
     if (!hasAIKeys()) {
       console.warn('AI keys not configured');
       return { safe: true, scores: {}, reason: null, method: 'fallback' };
@@ -331,27 +318,30 @@ export const moderateText = async (text) => {
       return { safe: true, scores: {}, reason: null };
     }
 
-    const prompt = `You are an advanced content moderation AI. Analyze this text for harmful content.
+    const prompt = `You are an advanced content moderation AI for a social media platform. Analyze this text for harmful content.
 
 TEXT TO ANALYZE: "${text}"
 
-DETECT AND SCORE (0.0-1.0) each category:
+CRITICAL CONTEXT RULES:
+- This text could be an AI-generated caption, creative writing, poetry, song lyrics, or user conversation
+- DO NOT flag creative, poetic, metaphorical, or descriptive language
+- DO NOT flag common social media slang ("fire", "sick", "badass", "killing it", "slay", etc.)
+- DO NOT flag emotion words ("dark", "haunting", "wild", "crazy", etc.) used in creative context
+- DO NOT flag normal descriptions of photography, art, nature, or beauty
+- ONLY flag genuinely harmful content: real profanity/slurs, actual threats, hate speech, explicit sexual content
+- Understand multilingual content natively - detect REAL abuse in ANY language (Hindi, Telugu, Tamil, Kannada, Malayalam, Bengali, Spanish, French, etc.)
+- Detect transliterated profanity (abuse written in English letters but meaning offensive in other languages)
+- Context matters: "This sunset is bloody gorgeous" = safe. "I'll bloody kill you" = unsafe.
 
-1. TOXICITY: General toxic/rude/disrespectful content
-2. SEVERE_TOXICITY: Extreme toxicity, very hateful
-3. PROFANITY: Swear words, obscene language (ANY language including transliterated)
+SCORE (0.0 to 1.0) each category:
+1. TOXICITY: Genuinely toxic/hateful content (NOT creative expression)
+2. SEVERE_TOXICITY: Extreme hate, dehumanization
+3. PROFANITY: Actual swear words, obscene language (in ANY language including transliterated)
 4. IDENTITY_ATTACK: Attacks based on identity (race, religion, gender, nationality)
-5. INSULT: Personal attacks, name-calling
-6. THREAT: Threats of violence or harm
-7. SEXUALLY_EXPLICIT: Sexual content, innuendo, 18+ references
+5. INSULT: Direct personal attacks, slurs, name-calling
+6. THREAT: Real threats of violence or harm
+7. SEXUALLY_EXPLICIT: Explicit sexual content, pornographic text
 8. HATE_SPEECH: Promoting hate against groups
-
-IMPORTANT:
-- Detect profanity in ALL languages (Hindi, Telugu, Tamil, Spanish, etc.)
-- Detect transliterated abuse (written in English letters but is regional language)
-- Detect leetspeak and obfuscated text (f*ck, sh1t, etc.)
-- Consider context but be strict for social media
-- Detect subtle harassment and coded language
 
 Respond ONLY with valid JSON:
 {
@@ -443,20 +433,69 @@ export const moderateComment = async (comment) => {
  * @returns {Object} - Moderation result
  */
 export const moderateCaption = async (text) => {
-  // Captions can be slightly more lenient
-  const result = await moderateText(text);
-  
-  // Adjust for caption context (still block severe stuff)
-  if (result.scores) {
-    const severeIssues = ['SEVERE_TOXICITY', 'THREAT', 'HATE_SPEECH', 'SEXUALLY_EXPLICIT'];
-    for (const issue of severeIssues) {
-      if (result.scores[issue] && result.scores[issue] >= 0.5) {
-        return { ...result, safe: false };
+  if (!hasAIKeys()) {
+    return { safe: true, scores: {}, reason: null };
+  }
+
+  if (!text || text.trim().length === 0) {
+    return { safe: true, scores: {}, reason: null };
+  }
+
+  try {
+    const prompt = `You are a content moderation AI for social media captions. This text is a caption for a photo or video post.
+
+CAPTION: "${text}"
+
+CRITICAL RULES FOR CAPTIONS:
+- Captions are often creative, poetic, witty, or use slang — this is NORMAL and ACCEPTABLE
+- AI-generated captions are common and should be treated as safe creative content
+- Hashtags, emojis, and internet slang are perfectly fine
+- Metaphors and figurative language are NOT harmful ("killing the game", "drop dead gorgeous", etc.)
+- Only flag GENUINELY harmful content: real profanity/slurs, actual hate speech, explicit sexual text, real threats
+- Understand ALL languages natively — detect real abuse in Hindi, Telugu, Tamil, Spanish, etc.
+- Transliterated abuse (regional language abuse written in English) should be caught
+
+Respond ONLY with valid JSON:
+{"safe": true, "scores": {"TOXICITY": 0.0, "PROFANITY": 0.0, "HATE_SPEECH": 0.0, "SEXUALLY_EXPLICIT": 0.0, "THREAT": 0.0}, "reason": null}`;
+
+    const completion = await createChatCompletion({
+      model: 'gemini-2.5-flash',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const content = completion.choices[0].message.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+
+    // Only block for severe issues in captions
+    const CAPTION_THRESHOLDS = {
+      PROFANITY: 0.85,
+      HATE_SPEECH: 0.6,
+      SEXUALLY_EXPLICIT: 0.7,
+      THREAT: 0.6,
+      TOXICITY: 0.8
+    };
+
+    let safe = true;
+    let reason = null;
+
+    for (const [attr, threshold] of Object.entries(CAPTION_THRESHOLDS)) {
+      if (analysis.scores?.[attr] && analysis.scores[attr] >= threshold) {
+        safe = false;
+        reason = getReasonMessage(attr);
+        break;
       }
     }
+
+    return {
+      safe: safe && analysis.safe !== false,
+      scores: analysis.scores || {},
+      reason: reason || analysis.reason,
+      method: 'gemini'
+    };
+  } catch (error) {
+    console.error('Caption moderation error:', error);
+    return { safe: true, scores: {}, reason: null };
   }
-  
-  return result;
 };
 
 /**
