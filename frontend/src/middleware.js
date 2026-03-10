@@ -48,8 +48,8 @@ export default async function middleware(request) {
   
   // Authentication check via NextAuth JWT only. Avoid depending on backend cookie domain/samesite.
   const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  const backendToken = session?.backendToken;
-  const isAuthenticated = !!backendToken;
+  // Use NextAuth session existence as auth check — API calls will enforce token validity
+  const isAuthenticated = !!session;
 
   // Check which route category this path belongs to
   const isProtectedRoute = ROUTES.protected.some(route => path.startsWith(route));

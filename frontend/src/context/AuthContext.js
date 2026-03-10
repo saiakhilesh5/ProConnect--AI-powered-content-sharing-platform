@@ -328,7 +328,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Error clearing cache before Google login:', e);
       }
       
-      await signIn("google");
+      await signIn("google", { callbackUrl: "/feed" });
     } catch (err) {
       setError(err);
     } finally {
