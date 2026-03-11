@@ -78,6 +78,12 @@ const StoriesBar = ({ stories = [], onStoryClick, onAddStory }) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
 
+  // Find the current user's story group (if any)
+  const ownStoryIndex = stories.findIndex(s => s.user?._id === user?._id || s._id === user?._id);
+  const hasOwnStory = ownStoryIndex !== -1;
+  // Other users' stories (exclude own)
+  const otherStories = stories.filter(s => s.user?._id !== user?._id && s._id !== user?._id);
+
   useEffect(() => {
     const checkScroll = () => {
       if (scrollRef.current) {
@@ -115,19 +121,23 @@ const StoriesBar = ({ stories = [], onStoryClick, onAddStory }) => {
         {user && (
           <StoryRing
             user={user}
-            hasNewStory={false}
+            hasNewStory={hasOwnStory}
             isOwn={true}
-            onClick={onAddStory}
+            onClick={hasOwnStory ? () => onStoryClick(ownStoryIndex) : onAddStory}
           />
         )}
-        {stories.map((story, index) => (
-          <StoryRing
-            key={story._id || index}
-            user={story.user}
-            hasNewStory={!story.viewed}
-            onClick={() => onStoryClick(index)}
-          />
-        ))}
+        {otherStories.map((story) => {
+          // Find the original index in stories array for correct viewer navigation
+          const originalIndex = stories.findIndex(s => s._id === story._id);
+          return (
+            <StoryRing
+              key={story._id}
+              user={story.user}
+              hasNewStory={!story.viewed}
+              onClick={() => onStoryClick(originalIndex)}
+            />
+          );
+        })}
       </div>
 
       {showLeftArrow && (

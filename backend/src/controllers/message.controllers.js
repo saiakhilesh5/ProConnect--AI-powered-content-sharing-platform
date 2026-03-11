@@ -367,12 +367,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
       content: notificationContent,
     });
 
-    // Send message email (non-blocking)
+    // Send message email only if recipient is OFFLINE (not connected to the website)
     const [recipient, sender] = await Promise.all([
-      User.findById(recipientId).select('email fullName'),
+      User.findById(recipientId).select('email fullName isOnline'),
       User.findById(senderId).select('fullName username'),
     ]);
-    if (recipient?.email) {
+    if (recipient?.email && !recipient.isOnline) {
       sendMessageEmail({
         recipientEmail: recipient.email,
         recipientName: recipient.fullName,

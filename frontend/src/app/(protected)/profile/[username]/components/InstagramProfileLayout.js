@@ -284,8 +284,8 @@ const InstagramProfileLayout = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-t border-border">
-        <div className="flex items-center justify-center">
+      <div className="border-t border-border overflow-x-auto">
+        <div className="flex items-center justify-start md:justify-center min-w-0">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -295,7 +295,7 @@ const InstagramProfileLayout = ({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center justify-center gap-1 py-4 px-8 md:px-12
+                  flex items-center justify-center gap-1 py-4 px-3 sm:px-6 md:px-12 shrink-0
                   border-t transition-colors
                   ${isActive 
                     ? 'border-foreground text-foreground' 

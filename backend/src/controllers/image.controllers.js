@@ -84,8 +84,8 @@ export const getAllImages = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const { category } = req.query;
 
-  // Base query for public images
-  let query = { visibility: "public" };
+  // Base query for public images — always exclude stories
+  let query = { visibility: "public", isStory: { $ne: true } };
   
   // Add category filter if provided and not 'all'
   if (category && category !== 'all') {
@@ -102,6 +102,7 @@ export const getAllImages = asyncHandler(async (req, res) => {
     if (category && category !== 'all') {
       query = {
         category,
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
@@ -114,6 +115,7 @@ export const getAllImages = asyncHandler(async (req, res) => {
     } else {
       // Show public images + follower-only images from users being followed + all user's own images
       query = {
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
@@ -156,12 +158,12 @@ export const getUserImages = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const images = await Image.find({ user: req.user._id })
+  const images = await Image.find({ user: req.user._id, isStory: { $ne: true } })
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await Image.countDocuments({ user: req.user._id });
+  const total = await Image.countDocuments({ user: req.user._id, isStory: { $ne: true } });
 
   const metadata = {
     total,
@@ -187,10 +189,11 @@ export const getUserPublicImages = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const { category } = req.query;
 
-  // Base query for public images
+  // Base query for public images — always exclude stories
   let query = { 
     user: userId,
-    visibility: "public" 
+    visibility: "public",
+    isStory: { $ne: true }
   };
   
   // Add category filter if provided and not 'all'
@@ -202,7 +205,7 @@ export const getUserPublicImages = asyncHandler(async (req, res) => {
   if (req.user) {
     // If requesting their own images, show all
     if (req.user._id.toString() === userId) {
-      query = { user: userId };
+      query = { user: userId, isStory: { $ne: true } };
       
       // Add category filter if provided
       if (category && category !== 'all') {
@@ -217,6 +220,7 @@ export const getUserPublicImages = asyncHandler(async (req, res) => {
           query = { 
             user: userId,
             category,
+            isStory: { $ne: true },
             $or: [
               { visibility: "public" },
               { visibility: "followers" }
@@ -225,6 +229,7 @@ export const getUserPublicImages = asyncHandler(async (req, res) => {
         } else {
           query = { 
             user: userId,
+            isStory: { $ne: true },
             $or: [
               { visibility: "public" },
               { visibility: "followers" }
@@ -350,9 +355,10 @@ export const searchImages = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Search query is required");
   }
 
-  // Set up base search query for public images
+  // Set up base search query for public images — exclude stories
   let searchQuery = {
     visibility: "public",
+    isStory: { $ne: true },
     $or: [
       { title: { $regex: q, $options: "i" } },
       { description: { $regex: q, $options: "i" } },
@@ -367,6 +373,7 @@ export const searchImages = asyncHandler(async (req, res) => {
     const followingIds = followingList.map(follow => follow.following);
     
     searchQuery = {
+      isStory: { $ne: true },
       $or: [
         // Public images
         {
@@ -430,8 +437,8 @@ export const getTrendingImages = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
   const { category } = req.query;
-  // Base query for public images
-  let query = { visibility: "public" };
+  // Base query for public images — exclude stories
+  let query = { visibility: "public", isStory: { $ne: true } };
   
   // Add category filter if provided and not 'all'
   if (category && category !== 'all') {
@@ -448,6 +455,7 @@ export const getTrendingImages = asyncHandler(async (req, res) => {
     if (category && category !== 'all') {
       query = {
         category,
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
@@ -459,6 +467,7 @@ export const getTrendingImages = asyncHandler(async (req, res) => {
       };
     } else {
       query = {
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
@@ -508,10 +517,11 @@ export const getImagesByTag = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const { category } = req.query;
 
-  // Base query for public images with the tag
+  // Base query for public images with the tag — exclude stories
   let query = { 
     tags: { $in: [tag.toLowerCase()] },
-    visibility: "public" 
+    visibility: "public",
+    isStory: { $ne: true }
   };
   
   // Add category filter if provided and not 'all'
@@ -530,25 +540,27 @@ export const getImagesByTag = asyncHandler(async (req, res) => {
       query = {
         tags: { $in: [tag.toLowerCase()] },
         category,
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
             visibility: "followers", 
             user: { $in: followingIds } 
           },
-          { user: req.user._id } // Include all of the user's own images with the tag
+          { user: req.user._id }
         ]
       };
     } else {
       query = {
         tags: { $in: [tag.toLowerCase()] },
+        isStory: { $ne: true },
         $or: [
           { visibility: "public" },
           { 
             visibility: "followers", 
             user: { $in: followingIds } 
           },
-          { user: req.user._id } // Include all of the user's own images with the tag
+          { user: req.user._id }
         ]
       };
     }
@@ -941,13 +953,23 @@ export const getStories = asyncHandler(async (req, res) => {
     const uid = story.user._id.toString();
     if (!seen.has(uid)) {
       seen.add(uid);
+      const userStories = stories.filter(s => s.user._id.toString() === uid);
       grouped.push({
         _id: uid,
         user: story.user,
-        images: stories.filter(s => s.user._id.toString() === uid),
+        images: userStories,
+        items: userStories, // StoryViewer expects 'items'
         viewed: false,
       });
     }
+  });
+
+  // Sort so current user's stories appear first
+  const currentUserId = userId.toString();
+  grouped.sort((a, b) => {
+    if (a._id === currentUserId) return -1;
+    if (b._id === currentUserId) return 1;
+    return 0;
   });
 
   res.status(200).json(new ApiResponse(200, "Stories fetched successfully", grouped));

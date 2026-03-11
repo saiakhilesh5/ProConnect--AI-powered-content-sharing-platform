@@ -124,4 +124,7 @@ const imageSchema = new Schema(
   }
 );
 
+// TTL index: MongoDB will automatically delete documents when expiresAt is reached
+imageSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, partialFilterExpression: { expiresAt: { $ne: null } } });
+
 export const Image = mongoose.model('Image', imageSchema);

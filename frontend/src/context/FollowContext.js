@@ -17,17 +17,18 @@ export const FollowProvider = ({ children }) => {
   const { user } = useAuth();
   const { data: session, status } = useSession();
   const api = useApi();
-  const fetchingRef = useRef(false);
+  const fetchingFollowersRef = useRef(false);
+  const fetchingFollowingRef = useRef(false);
   
   // Check if we have a valid session
   const hasValidSession = status === "authenticated" && session?.backendToken;
 
   // Get all followers of a user
   const getFollowers = useCallback(async (userId) => {
-    if (fetchingRef.current || !hasValidSession) return followers;
+    if (fetchingFollowersRef.current || !hasValidSession) return followers;
     
     try {
-      fetchingRef.current = true;
+      fetchingFollowersRef.current = true;
       setLoading(true);
       setError(null);
       const response = await api.get(`/api/follow/followers/${userId}`);
@@ -40,16 +41,16 @@ export const FollowProvider = ({ children }) => {
       return [];
     } finally {
       setLoading(false);
-      fetchingRef.current = false;
+      fetchingFollowersRef.current = false;
     }
   }, [api, followers, hasValidSession]);
 
   // Get all users the current user is following
   const getFollowing = useCallback(async (userId) => {
-    if (fetchingRef.current || !hasValidSession) return following;
+    if (fetchingFollowingRef.current || !hasValidSession) return following;
     
     try {
-      fetchingRef.current = true;
+      fetchingFollowingRef.current = true;
       setLoading(true);
       setError(null);
       const response = await api.get(`/api/follow/following/${userId}`);
@@ -62,7 +63,7 @@ export const FollowProvider = ({ children }) => {
       return [];
     } finally {
       setLoading(false);
-      fetchingRef.current = false;
+      fetchingFollowingRef.current = false;
     }
   }, [api, following, hasValidSession]);
 

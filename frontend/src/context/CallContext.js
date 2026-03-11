@@ -60,11 +60,21 @@ export const CallProvider = ({ children }) => {
   const durationIntervalRef = useRef(null);
   const ringtoneRef = useRef(null);
   const currentCallRef = useRef(null); // Always holds the latest currentCall to avoid stale closures
+  const callStatusRef = useRef(CALL_STATUS.IDLE);
+  const callTypeRef = useRef(null);
 
-  // Keep ref in sync with currentCall state
+  // Keep refs in sync with state to avoid stale closures in socket callbacks
   useEffect(() => {
     currentCallRef.current = currentCall;
   }, [currentCall]);
+
+  useEffect(() => {
+    callStatusRef.current = callStatus;
+  }, [callStatus]);
+
+  useEffect(() => {
+    callTypeRef.current = callType;
+  }, [callType]);
 
   // Initialize WebRTC service
   useEffect(() => {
@@ -100,8 +110,8 @@ export const CallProvider = ({ children }) => {
     const handleIncomingCall = ({ call, caller, conversationId, callType: type }) => {
       console.log("Incoming call:", call);
       
-      // Don't accept if already in a call
-      if (callStatus !== CALL_STATUS.IDLE) {
+      // Don't accept if already in a call — use ref for latest status
+      if (callStatusRef.current !== CALL_STATUS.IDLE) {
         socket.emit("call:decline", { callId: call._id });
         return;
       }
@@ -125,31 +135,32 @@ export const CallProvider = ({ children }) => {
       setCallStatus(CALL_STATUS.RINGING);
     };
 
-    // Call answered
-    const handleCallAnswered = async ({ callId, userId, user: remoteUser }) => {
-      console.log("Call answered by:", remoteUser?.username);
+    // Call answered — THIS runs on the CALLER side
+    const handleCallAnswered = async ({ callId, userId: remoteUserId, user: remoteUser }) => {
+      console.log("Call answered by:", remoteUser?.username, "callId:", callId);
       setCallStatus(CALL_STATUS.CONNECTING);
       
-      // Create and send WebRTC offer
+      // Create and send WebRTC offer to the answerer
       try {
-        const offer = await webRTCRef.current.createOffer(userId);
+        const offer = await webRTCRef.current.createOffer(remoteUserId);
         socket.emit("webrtc:offer", {
           callId,
-          targetUserId: userId,
+          targetUserId: remoteUserId,
           offer,
         });
       } catch (error) {
         console.error("Error creating offer:", error);
+        setCallStatus(CALL_STATUS.FAILED);
+        cleanupCall();
       }
     };
 
-    // Call connected (for answerer)
+    // Call connected (for answerer — backend confirms the call is ongoing)
     const handleCallConnected = ({ call }) => {
-      console.log("Call connected:", call);
+      console.log("Call connected (backend confirmed):", call._id);
       setCurrentCall(call);
-      setCallStatus(CALL_STATUS.CONNECTED);
+      // Don't start timer yet — wait until WebRTC media is actually connected
       stopRingtone();
-      startDurationTimer();
     };
 
     // Call declined
@@ -173,7 +184,8 @@ export const CallProvider = ({ children }) => {
     // Call missed
     const handleCallMissed = ({ callId }) => {
       console.log("Call missed:", callId);
-      if (callStatus === CALL_STATUS.RINGING || callStatus === CALL_STATUS.INCOMING) {
+      const status = callStatusRef.current;
+      if (status === CALL_STATUS.RINGING || status === CALL_STATUS.INCOMING) {
         setCallStatus(CALL_STATUS.MISSED);
         stopRingtone();
         cleanupCall();
@@ -187,12 +199,12 @@ export const CallProvider = ({ children }) => {
     };
 
     // Participant disconnected
-    const handleParticipantDisconnected = ({ callId, userId }) => {
-      console.log("Participant disconnected:", userId);
-      webRTCRef.current.closePeerConnection(userId);
+    const handleParticipantDisconnected = ({ callId, userId: disconnectedUserId }) => {
+      console.log("Participant disconnected:", disconnectedUserId);
+      webRTCRef.current.closePeerConnection(disconnectedUserId);
       
-      // If it's a 1-on-1 call, end it
-      if (!currentCall?.isGroupCall) {
+      // If it's a 1-on-1 call, end it — use ref for latest value
+      if (!currentCallRef.current?.isGroupCall) {
         setCallStatus(CALL_STATUS.ENDED);
         cleanupCall();
       }
@@ -210,11 +222,21 @@ export const CallProvider = ({ children }) => {
       // Update UI if needed
     };
 
-    // WebRTC signaling: Offer received
+    // WebRTC signaling: Offer received — THIS runs on the ANSWERER side
     const handleWebRTCOffer = async ({ callId, fromUserId, offer }) => {
       console.log("WebRTC offer received from:", fromUserId);
       
       try {
+        // Ensure local stream is available before creating answer
+        if (!webRTCRef.current.localStream) {
+          const type = callTypeRef.current;
+          await webRTCRef.current.getLocalStream({
+            audio: true,
+            video: type === "video",
+          });
+          setLocalStream(webRTCRef.current.localStream);
+        }
+        
         const answer = await webRTCRef.current.createAnswer(fromUserId, offer);
         socket.emit("webrtc:answer", {
           callId,
@@ -223,13 +245,15 @@ export const CallProvider = ({ children }) => {
         });
         
         setCallStatus(CALL_STATUS.CONNECTED);
-        // Timer is already started by handleCallConnected for the answerer
+        startDurationTimer();
       } catch (error) {
         console.error("Error handling offer:", error);
+        setCallStatus(CALL_STATUS.FAILED);
+        cleanupCall();
       }
     };
 
-    // WebRTC signaling: Answer received
+    // WebRTC signaling: Answer received — THIS runs on the CALLER side
     const handleWebRTCAnswer = async ({ callId, fromUserId, answer }) => {
       console.log("WebRTC answer received from:", fromUserId);
       
@@ -239,6 +263,8 @@ export const CallProvider = ({ children }) => {
         startDurationTimer();
       } catch (error) {
         console.error("Error handling answer:", error);
+        setCallStatus(CALL_STATUS.FAILED);
+        cleanupCall();
       }
     };
 
@@ -304,7 +330,7 @@ export const CallProvider = ({ children }) => {
       socket.off("webrtc:ice-candidate", handleICECandidate);
       socket.off("call:error", handleCallError);
     };
-  }, [socket, isConnected, callStatus, currentCall]);
+  }, [socket, isConnected, cleanupCall, startDurationTimer]);
 
   // Ringtone functions
   const playRingtone = () => {
@@ -386,7 +412,7 @@ export const CallProvider = ({ children }) => {
   };
 
   // Duration timer
-  const startDurationTimer = () => {
+  const startDurationTimer = useCallback(() => {
     // Clear any existing timer before starting a new one
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
@@ -396,7 +422,7 @@ export const CallProvider = ({ children }) => {
     durationIntervalRef.current = setInterval(() => {
       setCallDuration((prev) => prev + 1);
     }, 1000);
-  };
+  }, []);
 
   const stopDurationTimer = () => {
     if (durationIntervalRef.current) {

@@ -89,6 +89,23 @@ export default function ReelsPage() {
     fetchReels(feedType, 1);
   }, [feedType]);
 
+  // Check follow status when current reel changes
+  useEffect(() => {
+    const currentReel = reels[currentReelIndex];
+    const reelUserId = currentReel?.user?._id;
+    if (!reelUserId || !user || reelUserId === user._id) return;
+    if (followingStatus[reelUserId] !== undefined) return;
+    
+    api.get(`/api/follow/status/${reelUserId}`)
+      .then(res => {
+        setFollowingStatus(prev => ({
+          ...prev,
+          [reelUserId]: res.data?.data?.isFollowing ?? false,
+        }));
+      })
+      .catch(() => {});
+  }, [currentReelIndex, reels, user]);
+
   // Smooth transition handler
   const handleReelTransition = useCallback((direction, navigateFn) => {
     if (isTransitioning) return;
@@ -360,7 +377,7 @@ export default function ReelsPage() {
   };
 
   const isFollowing = (userId) => {
-    return followingStatus[userId] ?? currentReel?.user?.isFollowing;
+    return followingStatus[userId] ?? false;
   };
 
   if (loading && reels.length === 0) {

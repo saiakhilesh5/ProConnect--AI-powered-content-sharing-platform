@@ -6,14 +6,45 @@ const BRAND_COLOR = "#7c3aed";
 const BRAND_GRADIENT = "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)";
 
 // ─── Transporter ─────────────────────────────────────────────────────────────
-const createTransporter = () =>
-  nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || "gmail",
+const createTransporter = () => {
+  const service = process.env.EMAIL_SERVICE || "gmail";
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  // For Gmail: use App Password (not regular password)
+  // Go to Google Account → Security → 2-Step Verification → App passwords
+  if (service === "gmail") {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+  }
+
+  // For custom SMTP (SendGrid, Mailgun, Zoho, etc.)
+  if (process.env.EMAIL_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT) || 587,
+      secure: process.env.EMAIL_SECURE === "true",
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+  }
+
+  // Fallback to service-based
+  return nodemailer.createTransport({
+    service,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: emailUser,
+      pass: emailPass,
     },
   });
+};
 
 // ─── Shared layout wrapper ────────────────────────────────────────────────────
 const layout = (bodyContent) => `

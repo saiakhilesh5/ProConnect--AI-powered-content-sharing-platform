@@ -22,7 +22,7 @@ import {
 
 // ====== SUGGESTION CARD (used in both sidebars) ======
 const SuggestionCard = ({ suggestion, onFollow }) => {
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [followed, setFollowed] = useState(false);
 
   return (
     <div className="flex items-center justify-between py-2">
@@ -48,16 +48,19 @@ const SuggestionCard = ({ suggestion, onFollow }) => {
       <button
         onClick={(e) => {
           e.preventDefault();
-          setIsFollowing(!isFollowing);
-          onFollow?.(suggestion._id);
+          if (!followed) {
+            setFollowed(true);
+            onFollow?.(suggestion._id);
+          }
         }}
+        disabled={followed}
         className={`text-xs font-semibold ml-2 px-3 py-1.5 rounded-lg transition-all ${
-          isFollowing 
-            ? 'bg-secondary text-muted-foreground hover:text-foreground' 
+          followed 
+            ? 'bg-secondary text-muted-foreground' 
             : 'bg-primary/10 text-primary hover:bg-primary/20'
         }`}
       >
-        {isFollowing ? 'Following' : 'Follow'}
+        {followed ? 'Following' : 'Follow'}
       </button>
     </div>
   );
