@@ -102,6 +102,129 @@ export const CallProvider = ({ children }) => {
     };
   }, []);
 
+  // Ringtone functions
+  const playRingtone = () => {
+    try {
+      // Try to use audio file first
+      ringtoneRef.current = new Audio("/sounds/ringtone.mp3");
+      ringtoneRef.current.loop = true;
+      ringtoneRef.current.volume = 0.5;
+      
+      const playPromise = ringtoneRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // If audio file fails, use Web Audio API to generate a simple tone
+          playGeneratedRingtone();
+        });
+      }
+    } catch (error) {
+      console.error("Error playing ringtone:", error);
+      playGeneratedRingtone();
+    }
+  };
+
+  // Fallback ringtone using Web Audio API
+  const playGeneratedRingtone = () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 440; // A4 note
+      gainNode.gain.value = 0.3;
+      
+      // Create a pulsing effect
+      const pulseRingtone = () => {
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(523, audioContext.currentTime + 0.2);
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.4);
+      };
+      
+      oscillator.start();
+      pulseRingtone();
+      
+      const intervalId = setInterval(pulseRingtone, 1000);
+      
+      // Store for cleanup
+      ringtoneRef.current = {
+        stop: () => {
+          clearInterval(intervalId);
+          oscillator.stop();
+          audioContext.close();
+        },
+        pause: function() { this.stop(); },
+        currentTime: 0,
+      };
+    } catch (error) {
+      console.error("Error with fallback ringtone:", error);
+    }
+  };
+
+  const stopRingtone = () => {
+    if (ringtoneRef.current) {
+      try {
+        if (typeof ringtoneRef.current.pause === 'function') {
+          ringtoneRef.current.pause();
+        }
+        if (typeof ringtoneRef.current.stop === 'function') {
+          ringtoneRef.current.stop();
+        }
+        ringtoneRef.current = null;
+      } catch (error) {
+        console.error("Error stopping ringtone:", error);
+        ringtoneRef.current = null;
+      }
+    }
+  };
+
+  // Duration timer
+  const startDurationTimer = useCallback(() => {
+    // Clear any existing timer before starting a new one
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    setCallDuration(0);
+    durationIntervalRef.current = setInterval(() => {
+      setCallDuration((prev) => prev + 1);
+    }, 1000);
+  }, []);
+
+  const stopDurationTimer = () => {
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+  };
+
+  // Cleanup call
+  const cleanupCall = useCallback(() => {
+    stopDurationTimer();
+    stopRingtone();
+    
+    // Reset WebRTC
+    if (webRTCRef.current) {
+      webRTCRef.current.cleanup();
+    }
+    
+    // Reset state with a delay for UI feedback
+    setTimeout(() => {
+      setCurrentCall(null);
+      setIncomingCall(null);
+      setCallType(null);
+      setIsMuted(false);
+      setIsVideoOff(false);
+      setLocalStream(null);
+      setRemoteStreams(new Map());
+      setCallDuration(0);
+      setCallStatus(CALL_STATUS.IDLE);
+    }, 2000);
+  }, []);
+
   // Socket event listeners
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -331,129 +454,6 @@ export const CallProvider = ({ children }) => {
       socket.off("call:error", handleCallError);
     };
   }, [socket, isConnected, cleanupCall, startDurationTimer]);
-
-  // Ringtone functions
-  const playRingtone = () => {
-    try {
-      // Try to use audio file first
-      ringtoneRef.current = new Audio("/sounds/ringtone.mp3");
-      ringtoneRef.current.loop = true;
-      ringtoneRef.current.volume = 0.5;
-      
-      const playPromise = ringtoneRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // If audio file fails, use Web Audio API to generate a simple tone
-          playGeneratedRingtone();
-        });
-      }
-    } catch (error) {
-      console.error("Error playing ringtone:", error);
-      playGeneratedRingtone();
-    }
-  };
-
-  // Fallback ringtone using Web Audio API
-  const playGeneratedRingtone = () => {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.value = 440; // A4 note
-      gainNode.gain.value = 0.3;
-      
-      // Create a pulsing effect
-      const pulseRingtone = () => {
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(523, audioContext.currentTime + 0.2);
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.4);
-      };
-      
-      oscillator.start();
-      pulseRingtone();
-      
-      const intervalId = setInterval(pulseRingtone, 1000);
-      
-      // Store for cleanup
-      ringtoneRef.current = {
-        stop: () => {
-          clearInterval(intervalId);
-          oscillator.stop();
-          audioContext.close();
-        },
-        pause: function() { this.stop(); },
-        currentTime: 0,
-      };
-    } catch (error) {
-      console.error("Error with fallback ringtone:", error);
-    }
-  };
-
-  const stopRingtone = () => {
-    if (ringtoneRef.current) {
-      try {
-        if (typeof ringtoneRef.current.pause === 'function') {
-          ringtoneRef.current.pause();
-        }
-        if (typeof ringtoneRef.current.stop === 'function') {
-          ringtoneRef.current.stop();
-        }
-        ringtoneRef.current = null;
-      } catch (error) {
-        console.error("Error stopping ringtone:", error);
-        ringtoneRef.current = null;
-      }
-    }
-  };
-
-  // Duration timer
-  const startDurationTimer = useCallback(() => {
-    // Clear any existing timer before starting a new one
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
-    }
-    setCallDuration(0);
-    durationIntervalRef.current = setInterval(() => {
-      setCallDuration((prev) => prev + 1);
-    }, 1000);
-  }, []);
-
-  const stopDurationTimer = () => {
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
-    }
-  };
-
-  // Cleanup call
-  const cleanupCall = useCallback(() => {
-    stopDurationTimer();
-    stopRingtone();
-    
-    // Reset WebRTC
-    if (webRTCRef.current) {
-      webRTCRef.current.cleanup();
-    }
-    
-    // Reset state with a delay for UI feedback
-    setTimeout(() => {
-      setCurrentCall(null);
-      setIncomingCall(null);
-      setCallType(null);
-      setIsMuted(false);
-      setIsVideoOff(false);
-      setLocalStream(null);
-      setRemoteStreams(new Map());
-      setCallDuration(0);
-      setCallStatus(CALL_STATUS.IDLE);
-    }, 2000);
-  }, []);
 
   // Initiate a call
   const initiateCall = useCallback(async (conversationId, type) => {
