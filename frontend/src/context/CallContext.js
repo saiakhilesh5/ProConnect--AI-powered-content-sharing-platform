@@ -149,12 +149,15 @@ export const CallProvider = ({ children }) => {
       
       const intervalId = setInterval(pulseRingtone, 1000);
       
-      // Store for cleanup
+      // Store for cleanup (idempotent to prevent double-close)
+      let stopped = false;
       ringtoneRef.current = {
         stop: () => {
+          if (stopped) return;
+          stopped = true;
           clearInterval(intervalId);
-          oscillator.stop();
-          audioContext.close();
+          try { oscillator.stop(); } catch (e) {}
+          audioContext.close().catch(() => {});
         },
         pause: function() { this.stop(); },
         currentTime: 0,
@@ -167,17 +170,17 @@ export const CallProvider = ({ children }) => {
   const stopRingtone = () => {
     if (ringtoneRef.current) {
       try {
+        // Use pause() for HTML Audio, stop() for generated ringtone
+        // Don't call both — pause() on generated ringtone delegates to stop()
         if (typeof ringtoneRef.current.pause === 'function') {
           ringtoneRef.current.pause();
-        }
-        if (typeof ringtoneRef.current.stop === 'function') {
+        } else if (typeof ringtoneRef.current.stop === 'function') {
           ringtoneRef.current.stop();
         }
-        ringtoneRef.current = null;
       } catch (error) {
         console.error("Error stopping ringtone:", error);
-        ringtoneRef.current = null;
       }
+      ringtoneRef.current = null;
     }
   };
 
@@ -265,6 +268,16 @@ export const CallProvider = ({ children }) => {
       
       // Create and send WebRTC offer to the answerer
       try {
+        // Ensure local stream is available before creating offer
+        if (!webRTCRef.current.localStream) {
+          const type = callTypeRef.current;
+          const stream = await webRTCRef.current.getLocalStream({
+            audio: true,
+            video: type === "video",
+          });
+          setLocalStream(stream);
+        }
+        
         const offer = await webRTCRef.current.createOffer(remoteUserId);
         socket.emit("webrtc:offer", {
           callId,

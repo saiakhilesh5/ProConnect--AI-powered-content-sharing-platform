@@ -1,28 +1,25 @@
 // WebRTC Service for handling peer-to-peer audio/video calls
 
+// STUN servers (free, always available)
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun4.l.google.com:19302' },
-  // Free TURN servers for NAT traversal in production
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
 ];
+
+// Add TURN servers from env variables for NAT traversal across networks
+// Sign up at https://www.metered.ca/stun-turn for free TURN credentials (500GB/month)
+const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
+const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME;
+const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+if (turnUrl && turnUsername && turnCredential) {
+  const urls = turnUrl.includes(',') ? turnUrl.split(',').map(u => u.trim()) : turnUrl;
+  ICE_SERVERS.push({
+    urls,
+    username: turnUsername,
+    credential: turnCredential,
+  });
+}
 
 export class WebRTCService {
   constructor() {
