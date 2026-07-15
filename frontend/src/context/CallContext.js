@@ -214,16 +214,19 @@ export const CallProvider = ({ children }) => {
       webRTCRef.current.cleanup();
     }
     
-    // Reset state with a delay for UI feedback
+    // Reset state immediately so a new call can be initiated right away
+    // The CallEndedScreen uses its own internal timer for display
+    setLocalStream(null);
+    setRemoteStreams(new Map());
+    setCallDuration(0);
+    setIsMuted(false);
+    setIsVideoOff(false);
+    
+    // Delay clearing call info briefly for the "ended" UI, then fully reset
     setTimeout(() => {
       setCurrentCall(null);
       setIncomingCall(null);
       setCallType(null);
-      setIsMuted(false);
-      setIsVideoOff(false);
-      setLocalStream(null);
-      setRemoteStreams(new Map());
-      setCallDuration(0);
       setCallStatus(CALL_STATUS.IDLE);
     }, 2000);
   }, []);
@@ -476,7 +479,7 @@ export const CallProvider = ({ children }) => {
       return;
     }
 
-    if (callStatus !== CALL_STATUS.IDLE) {
+    if (callStatus !== CALL_STATUS.IDLE && callStatus !== CALL_STATUS.ENDED) {
       console.error("Already in a call");
       return;
     }

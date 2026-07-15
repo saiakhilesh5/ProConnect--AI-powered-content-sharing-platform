@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, X, Volume2, VolumeX } from "lucide-react";
 import Image from "next/image";
@@ -145,7 +145,15 @@ export function VideoCallScreen() {
   const remoteVideoRef = useRef(null);
   const remoteAudioRef = useRef(null);
 
-  // Set local video stream
+  // Set local video stream — use both effect and ref callback for reliability
+  const setLocalVideoRef = useCallback((node) => {
+    localVideoRef.current = node;
+    if (node && localStream) {
+      node.srcObject = localStream;
+      node.play().catch(() => {});
+    }
+  }, [localStream]);
+
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
@@ -153,7 +161,7 @@ export function VideoCallScreen() {
         console.warn("Local video play failed:", e);
       });
     }
-  }, [localStream]);
+  }, [localStream, callStatus]);
 
   // Set remote video + audio stream
   useEffect(() => {
@@ -173,7 +181,7 @@ export function VideoCallScreen() {
         });
       }
     }
-  }, [remoteStreams]);
+  }, [remoteStreams, callStatus]);
 
   // Only show for video calls in active states
   if (
@@ -263,7 +271,7 @@ export function VideoCallScreen() {
         className="absolute top-4 right-4 w-32 h-44 md:w-40 md:h-56 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20"
       >
         <video
-          ref={localVideoRef}
+          ref={setLocalVideoRef}
           autoPlay
           playsInline
           muted

@@ -1,0 +1,108 @@
+@startuml proconnect_user_flowchart
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 10
+
+skinparam activity {
+    BackgroundColor #EEF2FF
+    BorderColor #6366F1
+    FontColor #1E293B
+    DiamondBackgroundColor #FEF3C7
+    DiamondBorderColor #F59E0B
+}
+
+skinparam arrow {
+    Color #6366F1
+    FontColor #475569
+    FontSize 9
+}
+
+skinparam partition {
+    BorderColor #CBD5E1
+    FontColor #1E293B
+    FontStyle bold
+    BackgroundColor #FAFAFA
+}
+
+title <b>ProConnect — User Journey Flowchart</b>
+
+start
+
+partition "**Authentication**" #F0F9FF {
+    :User visits ProConnect;
+    if (Has account?) then (Yes)
+        if (Login method?) then (Google)
+            :Google OAuth via NextAuth;<<#FCE7F3>>
+        else (Credentials)
+            :Email & Password login;<<#DBEAFE>>
+        endif
+        :Generate JWT & store session;
+    else (No)
+        :Register (username, email, pass);<<#DCFCE7>>
+        :Hash password & create user;
+        :Generate JWT;
+    endif
+    :Redirect to /feed;
+}
+
+partition "**Main Feed**" #F0FDF4 {
+    :Load AI-ranked personalized feed;
+    split
+        :Browse & Like image;
+    split again
+        :Comment (AI moderated);
+    split again
+        :Favorite or Save;
+    split again
+        :Search (AI Semantic);
+    split again
+        :Explore trending;
+    split again
+        :Upload content;
+    split again
+        :Open messaging;
+    end split
+}
+
+partition "**Reels**" #FDF4FF {
+    :Browse AI-ranked reels feed;
+    split
+        :Watch & auto-play;
+    split again
+        :Like / Comment / Save;
+    end split
+}
+
+partition "**Messaging**" #F0FDFA {
+    :Open conversation (DM or Group);
+    split
+        :Text / Image / Voice;
+    split again
+        :Poll / Location;
+    split again
+        :Voice or Video Call;
+    end split
+    :Real-time via Socket.io;
+}
+
+partition "**Profile**" #FFFBEB {
+    split
+        :Edit profile & settings;
+    split again
+        :Followers / Following;
+    split again
+        :AI Analytics & Growth tips;
+    end split
+}
+
+if (Continue?) then (Yes)
+    :Return to Feed;
+else (No)
+    :Logout & clear session;
+    stop
+endif
+
+@enduml

@@ -1,6 +1,6 @@
-# Pixora
+# Proconnect
 
-**Pixora** is a full-stack, AI-powered social media platform for creators to connect, share, and grow. It combines Instagram-style photo sharing with TikTok-style short-form reels, real-time messaging with voice and video calls, 14 distinct AI-powered features, multilingual content moderation, and a comprehensive admin dashboard — all in one platform.
+**Proconnect** is a full-stack, AI-powered social media platform for creators to connect, share, and grow. It combines Instagram-style photo sharing with TikTok-style short-form reels, real-time messaging with voice and video calls, 14 distinct AI-powered features, multilingual content moderation, and a comprehensive admin dashboard — all in one platform.
 
 **Live:** [pixora.vercel.app](https://pro-connect-ai-powered-content-shar.vercel.app/)
 

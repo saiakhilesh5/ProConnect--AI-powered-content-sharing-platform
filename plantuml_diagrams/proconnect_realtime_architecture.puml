@@ -1,0 +1,79 @@
+@startuml proconnect_realtime_architecture
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam componentStyle rectangle
+
+skinparam component {
+    BackgroundColor #EEF2FF
+    BorderColor #6366F1
+    FontColor #1E293B
+    FontStyle bold
+}
+
+skinparam node {
+    BackgroundColor #DBEAFE
+    BorderColor #3B82F6
+    FontColor #1E293B
+}
+
+skinparam database {
+    BackgroundColor #FFF7ED
+    BorderColor #F97316
+    FontColor #1E293B
+}
+
+skinparam rectangle {
+    BorderColor #CBD5E1
+    FontColor #1E293B
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #6366F1
+    FontColor #475569
+    FontSize 9
+}
+
+title <b>ProConnect — Real-Time Architecture</b>
+
+rectangle "**Clients**" #F8FAFC {
+    node "Client A" as clientA
+    node "Client B" as clientB
+}
+
+rectangle "**Socket.io Server**" #EEF2FF {
+    component "**Connection Manager**\nuser-socket map" as connMgr #E0E7FF
+
+    component "**Presence**\nonline, idle, away" as presence #DCFCE7
+    component "**Messaging**\nsend, new, read, typing" as messaging #CCFBF1
+    component "**Calls**\ninitiate, accept, decline, end" as calls #FCE7F3
+    component "**Notifications**\nfollow, like, comment" as notifs #FEF3C7
+
+    component "Rooms: user, conversation, call" as rooms #F3E8FF
+}
+
+rectangle "**Data Layer**" #F8FAFC {
+    database "MongoDB" as db
+    database "Cloudinary" as cdn
+}
+
+clientA -down-> connMgr : WebSocket
+clientB -down-> connMgr : WebSocket
+
+connMgr -down-> presence
+connMgr -down-> messaging
+connMgr -down-> calls
+connMgr -down-> notifs
+connMgr -down-> rooms
+
+presence -down-> db
+messaging -down-> db
+calls -down-> db
+notifs -down-> db
+messaging -right-> cdn : media
+
+@enduml

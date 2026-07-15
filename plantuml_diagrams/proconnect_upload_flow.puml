@@ -1,0 +1,79 @@
+@startuml proconnect_upload_flow
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 10
+
+skinparam activity {
+    BackgroundColor #EEF2FF
+    BorderColor #6366F1
+    FontColor #1E293B
+    DiamondBackgroundColor #FEF3C7
+    DiamondBorderColor #F59E0B
+}
+
+skinparam arrow {
+    Color #6366F1
+    FontColor #475569
+    FontSize 9
+}
+
+skinparam partition {
+    BorderColor #CBD5E1
+    FontColor #1E293B
+    FontStyle bold
+    BackgroundColor #FAFAFA
+}
+
+title <b>ProConnect — Content Upload Flow</b>
+
+|#F0F9FF|**Frontend (Next.js)**|
+start
+if (Content type?) then (Image)
+    :Select image (jpg/png/webp, max 100MB);
+else (Reel)
+    :Select video (max 60s);
+endif
+:Preview & add details;
+
+|#F0FDF4|**Express.js API**|
+:JWT Auth Middleware;
+if (Token valid?) then (Yes)
+else (No)
+    :401 Unauthorized;
+    stop
+endif
+:Rate Limit + Multer validation;
+if (File OK?) then (Yes)
+else (No)
+    :400 Bad Request;
+    stop
+endif
+
+|#FFF7ED|**Cloudinary CDN**|
+:Upload file to Cloudinary;
+:Return URL + publicId;
+
+|#F0FDF4|**Express.js API**|
+partition "**AI Processing**" #FDF4FF {
+    if (Image?) then (Yes)
+        :AI Analysis (caption, tags, category);
+        :Perceptual hash (copyright check);
+    else (Reel)
+        :AI Reel Analyzer (caption, sentiment);
+    endif
+    :Content Moderation check;
+}
+
+|#FFFBEB|**MongoDB**|
+:Save document (Image or Reel);
+:Update user postsCount;
+
+|#F0F9FF|**Frontend (Next.js)**|
+:Success notification;
+:Show in profile & feed;
+stop
+
+@enduml
