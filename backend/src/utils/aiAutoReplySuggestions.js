@@ -225,7 +225,7 @@ Respond ONLY with valid JSON (no markdown):
 }`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;

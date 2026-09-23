@@ -65,7 +65,7 @@
 | **Nodemailer** | Password reset and notification emails |
 | **Multer** | File upload middleware |
 | **Helmet** | Security headers (XSS, clickjacking, MIME sniffing) |
-| **Google Gemini AI** | All 14 AI-powered features (gemini-2.5-flash) |
+| **Google Gemini AI** | All 14 AI-powered features (gemini-3.8-flash) |
 
 ### AI Infrastructure
 | Component | Details |

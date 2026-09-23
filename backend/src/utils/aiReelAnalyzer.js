@@ -111,7 +111,7 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
 }`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{
         role: 'user',
         content: [
@@ -239,7 +239,7 @@ Respond ONLY with valid JSON:
     }
 
     const modCompletion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: contentParts }]
     });
     const content = modCompletion.choices[0].message.content;

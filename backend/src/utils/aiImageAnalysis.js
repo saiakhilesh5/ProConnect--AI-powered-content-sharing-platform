@@ -48,7 +48,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
     const imageBase64 = await fetchImageAsBase64(imageUrl);
     
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{
         role: 'user',
         content: [

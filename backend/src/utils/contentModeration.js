@@ -169,7 +169,7 @@ Respond ONLY with valid JSON (no markdown):
 {"safe":true,"scores":{"TOXICITY":0.0,"SEVERE_TOXICITY":0.0,"IDENTITY_ATTACK":0.0,"INSULT":0.0,"PROFANITY":0.0,"THREAT":0.0,"SEXUALLY_EXPLICIT":0.0,"SPAM":0.0},"reason":null}`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;
@@ -255,7 +255,7 @@ Respond ONLY with valid JSON (no markdown):
 Be strict about nudity and explicit content. Artistic nudity should still be flagged.`;
 
     const imageCompletion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{
         role: 'user',
         content: [

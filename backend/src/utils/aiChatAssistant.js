@@ -289,7 +289,7 @@ Current date: ${new Date().toLocaleDateString()}`;
 
     // Send message with system context
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
@@ -351,7 +351,7 @@ Make captions:
 - 50-100 characters each`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{
         role: 'user',
         content: [

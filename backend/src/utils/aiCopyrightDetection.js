@@ -89,7 +89,7 @@ Respond ONLY with valid JSON (no markdown):
 {"isSimilar": true/false, "similarityScore": 0-100, "reason": "brief explanation"}`;
 
         const completion = await createChatCompletion({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.8-flash',
           messages: [{
             role: 'user',
             content: [

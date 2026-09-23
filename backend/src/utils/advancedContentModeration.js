@@ -362,7 +362,7 @@ Respond ONLY with valid JSON:
 }`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;
@@ -459,7 +459,7 @@ Respond ONLY with valid JSON:
 {"safe": true, "scores": {"TOXICITY": 0.0, "PROFANITY": 0.0, "HATE_SPEECH": 0.0, "SEXUALLY_EXPLICIT": 0.0, "THREAT": 0.0}, "reason": null}`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const content = completion.choices[0].message.content;

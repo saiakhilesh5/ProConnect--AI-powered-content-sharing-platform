@@ -284,7 +284,7 @@ Generate a detailed report with the following sections. Use markdown formatting:
 Keep the report concise but insightful. Use emojis sparingly for visual appeal. Include specific numbers from the data.`;
 
     const completion = await createChatCompletion({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       messages: [{ role: 'user', content: prompt }]
     });
     const insights = completion.choices[0].message.content;
